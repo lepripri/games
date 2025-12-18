@@ -8,3 +8,17 @@ function createObject (ln, col, objectID) {
     newElement.draggable = false;
     return newElement;
 }
+if (localStorage.games == undefined) {
+    localStorage.setItem('games', '{"favoriteGames": ""}')
+}
+var gamesStorage = JSON.parse(localStorage.games);
+var lastGamesStorage = gamesStorage;
+setInterval(() => {
+    if (lastGamesStorage != gamesStorage) {
+        localStorage.setItem('games', JSON.stringify(gamesStorage));
+        var gamesStorage = JSON.parse(localStorage.games);
+        var lastGamesStorage = gamesStorage;
+    }
+}, 100);
+createObject(4, 4, "RDP01");
+createObject(4, 5, "RDP01");

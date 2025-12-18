@@ -24,3 +24,58 @@ setInterval(() => {
 }, 100);
 createObject(4, 4, "RDP01");
 createObject(4, 5, "RDP01");
+
+var preInitiation =  {
+        energy: {
+            level: 100,
+            charging: {
+                limit: 100,
+                time: 120000,
+                current: 0
+            }
+        },
+        level: 1,
+        receveObjects: [],
+        curentSelection: [],
+        grid: [
+            [
+                 {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false},
+                 {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false},
+                 {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false},
+                 {filled: false}, {filled: false}, {filled: false}, {filled: true, id: "RDP01", locked: false, boxed: false, product: {items: [], energyConsomation: true, possibility: false}}, {filled: true, id: "RDP01", locked: false, boxed: false, product: {items: [], energyConsomation: true, possibility: false}}, {filled: false}, {filled: false},
+                 {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false}, 
+                 {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false}, 
+                 {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false}, 
+                 {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false}
+            ]
+        ],
+        inventory: {
+            content: [
+                {
+                    filled: true,
+                    id: "RDP02",
+                    locked: false,
+                    boxed: false,
+                    product: {
+                        items: [
+                            {
+                                filled: true,
+                                id: "CPP02",
+                                locked: false,
+                                boxed: false,
+                                product: {
+                                    items: [],
+                                    energyConsomation: true,
+                                    possibility: false
+                                },
+                                probality: 100
+                            }
+                        ],
+                        energyConsomation: true,
+                        possibility: true
+                    }
+                }
+            ],
+            maxleight: 10
+        }
+    };

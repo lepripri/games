@@ -42,7 +42,7 @@ var preInitiation =  {
                  {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false},
                  {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false},
                  {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false},
-                 {filled: false}, {filled: false}, {filled: false}, {filled: true, id: "RDP01", locked: false, boxed: false, product: {items: [], energyConsomation: true, possibility: false}}, {filled: true, id: "RDP01", locked: false, boxed: false, product: {items: [], energyConsomation: true, possibility: false}}, {filled: false}, {filled: false},
+                 {filled: false}, {filled: false}, {filled: false}, {filled: true, id: "RDP01", locked: false, boxed: {trued: false, level: 0}, product: {items: [], energyConsomation: true, possibility: false}}, {filled: true, id: "RDP01", locked: false, boxed: {trued: false, level: 0}, product: {items: [], energyConsomation: true, possibility: false}}, {filled: false}, {filled: false},
                  {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false}, 
                  {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false}, 
                  {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false}, 
@@ -55,14 +55,14 @@ var preInitiation =  {
                     filled: true,
                     id: "RDP02",
                     locked: false,
-                    boxed: false,
+                    boxed: {trued: false, level: 0},
                     product: {
                         items: [
                             {
                                 filled: true,
                                 id: "CPP02",
                                 locked: false,
-                                boxed: false,
+                                boxed: {trued: false, level: 0},
                                 product: {
                                     items: [],
                                     energyConsomation: true,

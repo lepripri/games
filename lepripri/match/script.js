@@ -52,6 +52,13 @@ var preInitiation =  {
             maxleight: 10
         }
     };
+function breakDecimalNumber(num) {
+    var StringNum = num.toString();
+    return {
+        unity: parseInt(StringNum.substring(0, StringNum.indexOf("."))),
+        decimal: parseInt(StringNum.substring(StringNum.indexOf(".") + 1, StringNum.leight))
+    };
+}
 options.onchange = () => {
     options.value = "options";
 };

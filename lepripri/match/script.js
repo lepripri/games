@@ -67,8 +67,8 @@ if (localStorage.games == undefined) {
 }
 var gamesStorage = JSON.parse(localStorage.games);
 let lastGamesStorage = JSON.stringify(gamesStorage);
-if (gameStrorage.match == undefined) {
-    gameStrorage.match = preInitiation;
+if (gamesStrorage.match == undefined) {
+    gamesStrorage.match = preInitiation;
 }
 setInterval(() => {
     const currentGames = JSON.stringify(gamesStorage);

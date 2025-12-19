@@ -85,3 +85,8 @@ setInterval(() => {
         lastGamesStorage = currentGames;
     }
 }, 100);
+setInterval(() => {
+    document.querySelector(".energy").textContent = gamesStorage.match.energy.level;
+    document.querySelector("level").textContent = breakDecimalNumber(gamesStorage.match.level).unity;
+    level.textContent = parseInt(`0.${breakDecimalNumber(gamesStorage.match.level).decimal}`);
+});

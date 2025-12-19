@@ -53,7 +53,7 @@ var preInitiation =  {
         }
     };
 function breakDecimalNumber(num) {
-    if (isFinite()) {
+    if (isFinite(num)) {
         var StringNum = num.toString() + ".0";
     }else{
         var StringNum = num.toString();

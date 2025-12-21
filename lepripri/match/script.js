@@ -94,3 +94,19 @@ setInterval(() => {
     document.querySelector("level").textContent = breakDecimalNumber(gamesStorage.match.level).unity;
     level.value = Number(`0.${breakDecimalNumber(gamesStorage.match.level).decimal}`);
 });
+//{filled: true, id: "PPC02", locked: true, boxed: {trued: true, level: 0}, product: {items: [], energyConsomation: true, possibility: false}}
+gamesStorage.match.grid.at().forEach((a, b) => {
+    var Case = grid.querySelectorAll('th').item(b),
+    newImg = document.createElement('img');
+    if (a.filled) {
+        Case.setAttribute('completed', '')
+        newImg.src = "icons/" + a.id + ".png"
+        if (a.boxed.trued) {
+            newImg.hidden = true;
+        }
+        if (a.locked) {
+            Case.setAttribute("disabled", "")
+        }
+        Case.appendChild(newImg);
+    }
+});

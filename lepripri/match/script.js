@@ -110,3 +110,68 @@ gamesStorage.match.grid.at().forEach((a, b) => {
         Case.appendChild(newImg);
     }
 });
+  var dragged;
+  document.addEventListener(
+    "dragstart",
+    function (event) {
+      // Stocke une référence sur l'objet glissable
+      dragged = event.target;
+      // transparence 50%
+      event.target.style.opacity = 0.5;
+      event.target.parentElement.removeAttribute('competed');
+    },
+    false,
+  );
+  document.addEventListener(
+    "dragend",
+    function (event) {
+      // reset de la transparence
+      event.target.style.opacity = "";
+      event.target.parentElement.removeAttribute('competed');
+    },
+    false,
+  );
+  grid.querySelectorAll("th").forEach((c) => {c.addEventListener(
+    "dragover",
+    function (event) {
+      // Empêche default d'autoriser le drop
+      if (c.getAttribute("completed") == null) {
+          event.preventDefault();
+      }
+    },
+    false,
+  );});
+  document.addEventListener(
+    "dragenter",
+    function (event) {
+      // Met en surbrillance la cible de drop potentielle lorsque l'élément glissable y entre
+      if (event.target.toString() == "[object HTMLTableCellElement]" && event.target.getAttribute("completed") == null) {
+        event.target.style.background = "#AAAAAA";
+      }
+    },
+    false,
+  );
+  document.addEventListener(
+    "dragleave",
+    function (event) {
+      /* reset de l'arrière-plan des potentielles cible du drop lorsque les éléments glissables les quittent */
+        event.target.style.background = "";
+    },
+    false,
+  );
+  document.addEventListener(
+    "drop",
+    function (event) {
+      // Empêche l'action par défaut (ouvrir comme lien pour certains éléments)
+      event.preventDefault();
+      // Déplace l'élément traîné vers la cible du drop sélectionnée
+      if (event.target.toString() == "[object HTMLTableCellElement]" && event.target.getAttribute("completed") == null) {
+        event.target.style.background = "";
+        dragged.parentNode.removeAttribute("completed");
+        dragged.parentNode.removeChild(dragged);
+        event.target.appendChild(dragged);
+        event.target.setAttribute("completed", "");
+      }
+    },
+    false,
+  );

@@ -136,7 +136,8 @@ gamesStorage.match.grid.at().forEach((a, b) => {
       if (c.getAttribute("completed") == null) {
           event.preventDefault();
       }
-      if (c.childNodes.item(0).src == dragged.src) {
+      const firstChild = c.childNodes.item(0);
+      if (firstChild && firstChild.src && firstChild.src == dragged.src) { // Added checks for firstChild and firstChild.src
           event.preventDefault();
       }
     },

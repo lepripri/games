@@ -13,7 +13,7 @@ var preInitiation =  {
         grid: [
             [
                  {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false},
-                 {filled: false}, {filled: false}, {filled: false}, {filled: true, id: "PPC02", locked: true, boxed: {trued: true, level: 0}, product: {items: [], energyConsomation: true, possibility: false}}, {filled: true, id: "RDP03", locked: true, boxed: {trued: true, level: 2}, product: {items: [], energyConsomation: true, possibility: false}}, {filled: true, id: "RDP02", locked: true, boxed: {trued: true, level: 2}, product: {items: [], energyConsomation: true, possibility: false}}, {filled: true, id: "RDP02", locked: true, boxed: {trued: true, level: 2}, product: {items: [], energyConsomation: true, possibility: false}},
+                 {filled: false}, {filled: false}, {filled: false}, {filled: true, id: "CPP02", locked: true, boxed: {trued: true, level: 0}, product: {items: [], energyConsomation: true, possibility: false}}, {filled: true, id: "RDP03", locked: true, boxed: {trued: true, level: 2}, product: {items: [], energyConsomation: true, possibility: false}}, {filled: true, id: "RDP02", locked: true, boxed: {trued: true, level: 2}, product: {items: [], energyConsomation: true, possibility: false}}, {filled: true, id: "RDP02", locked: true, boxed: {trued: true, level: 2}, product: {items: [], energyConsomation: true, possibility: false}},
                  {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false},
                  {filled: false}, {filled: false}, {filled: false}, {filled: true, id: "RDP01", locked: false, boxed: {trued: false, level: 0}, product: {items: [], energyConsomation: true, possibility: false}}, {filled: true, id: "RDP01", locked: false, boxed: {trued: false, level: 0}, product: {items: [], energyConsomation: true, possibility: false}}, {filled: false}, {filled: false},
                  {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false}, 
@@ -94,7 +94,7 @@ setInterval(() => {
     document.querySelector("level").textContent = breakDecimalNumber(gamesStorage.match.level).unity;
     level.value = Number(`0.${breakDecimalNumber(gamesStorage.match.level).decimal}`);
 });
-//{filled: true, id: "PPC02", locked: true, boxed: {trued: true, level: 0}, product: {items: [], energyConsomation: true, possibility: false}}
+//{filled: true, id: "CPP02", locked: true, boxed: {trued: true, level: 0}, product: {items: [], energyConsomation: true, possibility: false}}
 gamesStorage.match.grid.at().forEach((a, b) => {
     var Case = grid.querySelectorAll('th').item(b),
     newImg = document.createElement('img');

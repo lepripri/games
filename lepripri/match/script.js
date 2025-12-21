@@ -116,9 +116,8 @@ gamesStorage.match.grid.at().forEach((a, b) => {
     function (event) {
       // Stocke une référence sur l'objet glissable
       dragged = event.target;
-      // transparence 50%
-      event.target.style.opacity = 0.5;
-      event.target.parentElement.removeAttribute('competed');
+      // transparence 100%
+      event.target.style.opacity = 0;
     },
     false,
   );
@@ -127,7 +126,6 @@ gamesStorage.match.grid.at().forEach((a, b) => {
     function (event) {
       // reset de la transparence
       event.target.style.opacity = "";
-      event.target.parentElement.removeAttribute('competed');
     },
     false,
   );
@@ -136,6 +134,9 @@ gamesStorage.match.grid.at().forEach((a, b) => {
     function (event) {
       // Empêche default d'autoriser le drop
       if (c.getAttribute("completed") == null) {
+          event.preventDefault();
+      }
+      if (c.childNodes.item(0).src == dragged.src) {
           event.preventDefault();
       }
     },

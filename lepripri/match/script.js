@@ -13,9 +13,9 @@ var preInitiation =  {
         grid: [
             [
                  {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false},
-                 {filled: false}, {filled: false}, {filled: false}, {filled: true, id: "CPP02", locked: true, boxed: {trued: true, level: 0}, product: {items: [], energyConsomation: true, possibility: false}}, {filled: true, id: "RDP03", locked: true, boxed: {trued: true, level: 2}, product: {items: [], energyConsomation: true, possibility: false}}, {filled: true, id: "RDP02", locked: true, boxed: {trued: true, level: 2}, product: {items: [], energyConsomation: true, possibility: false}}, {filled: true, id: "RDP02", locked: true, boxed: {trued: true, level: 2}, product: {items: [], energyConsomation: true, possibility: false}},
+                 {filled: false}, {filled: false}, {filled: false}, {filled: true, id: "CPP2", locked: true, boxed: {trued: true, level: 0}, product: {items: [], energyConsomation: true, possibility: false}}, {filled: true, id: "RDP3", locked: true, boxed: {trued: true, level: 2}, product: {items: [], energyConsomation: true, possibility: false}}, {filled: true, id: "RDP2", locked: true, boxed: {trued: true, level: 2}, product: {items: [], energyConsomation: true, possibility: false}}, {filled: true, id: "RDP2", locked: true, boxed: {trued: true, level: 2}, product: {items: [], energyConsomation: true, possibility: false}},
                  {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false},
-                 {filled: false}, {filled: false}, {filled: false}, {filled: true, id: "RDP01", locked: false, boxed: {trued: false, level: 0}, product: {items: [], energyConsomation: true, possibility: false}}, {filled: true, id: "RDP01", locked: false, boxed: {trued: false, level: 0}, product: {items: [], energyConsomation: true, possibility: false}}, {filled: false}, {filled: false},
+                 {filled: false}, {filled: false}, {filled: false}, {filled: true, id: "RDP1", locked: false, boxed: {trued: false, level: 0}, product: {items: [], energyConsomation: true, possibility: false}}, {filled: true, id: "RDP1", locked: false, boxed: {trued: false, level: 0}, product: {items: [], energyConsomation: true, possibility: false}}, {filled: false}, {filled: false},
                  {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false}, 
                  {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false}, 
                  {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false}, {filled: false}, 
@@ -26,14 +26,14 @@ var preInitiation =  {
             content: [
                 {
                     filled: true,
-                    id: "RDP02",
+                    id: "RDP2",
                     locked: false,
                     boxed: {trued: false, level: 0},
                     product: {
                         items: [
                             {
                                 filled: true,
-                                id: "CPP02",
+                                id: "CPP2",
                                 locked: false,
                                 boxed: {trued: false, level: 0},
                                 product: {
@@ -94,7 +94,7 @@ setInterval(() => {
     document.querySelector("level").textContent = breakDecimalNumber(gamesStorage.match.level).unity;
     level.value = Number(`0.${breakDecimalNumber(gamesStorage.match.level).decimal}`);
 });
-//{filled: true, id: "CPP02", locked: true, boxed: {trued: true, level: 0}, product: {items: [], energyConsomation: true, possibility: false}}
+//{filled: true, id: "CPP2", locked: true, boxed: {trued: true, level: 0}, product: {items: [], energyConsomation: true, possibility: false}}
 gamesStorage.match.grid.at().forEach((a, b) => {
     var Case = grid.querySelectorAll('th').item(b),
     newImg = document.createElement('img');

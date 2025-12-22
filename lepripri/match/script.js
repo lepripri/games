@@ -1,3 +1,28 @@
+var matchObject = class matchObject {
+    constructor(filled, id, locked, energyConsomation, product, box) {
+        var defaultObject = {
+            filled: filled,
+            id: id,
+            locked: locked,
+            boxed: {
+                trued: false,
+                level: 0
+            },
+            product: {
+                items: [],
+                energyConsomation: false,
+                possibility: false
+            }
+        };
+        if (product != undefined) {
+            defaultObject.product = product;
+        }
+        if (box != undefined) {
+            defaultObject.boxed = product;
+        }
+        return defaultObject;
+    }
+}
 var preInitiation =  {
         energy: {
             level: 100,

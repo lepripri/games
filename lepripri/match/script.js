@@ -1,186 +1,196 @@
+/* =====================================================
+   PRIPRI GAME – COMMANDES & PROGRESSION (FINAL)
+   compatible avec TON HTML / CSS
+===================================================== */
 
 /* ===============================
-   OBJET NAME
+   NOMS DES OBJETS
 ================================ */
 const OBJECT_NAMES = {
-    // === PRIPRI (CPP) ===
     CPP1: "pripri simple",
     CPP2: "pripri double",
     CPP3: "pripri triple",
     CPP4: "pripri quadruple",
-    CPP5: "pripri triple avec un RJ45",
-    CPP6: "pripri triple avec 3 USB et un RJ45",
-    CPP7: "pripri avec 7 USB",
+    CPP5: "pripri RJ45",
+    CPP6: "pripri USB+RJ45",
+    CPP7: "pripri 7 USB",
     CPP8: "⚡ maman pripri",
-    CPP9: "⚡ pripri extraterrestre magique",
-
-    // === BOÎTES / PRODUCTEURS (RDP) ===
+    CPP9: "⚡ pripri extraterrestre",
     RDP1: "boîte vide",
     RDP2: "⚡ boîte à un pripri",
     RDP3: "⚡ boîte un peu pleine",
     RDP4: "⚡ boîte bien pleine",
-    RDP5: "⚡boîte pleine",
+    RDP5: "⚡ boîte pleine",
     RDP6: "⚡ ville de priprix"
 };
+
 /* ===============================
-   OBJET MATCH
+   PERSONNAGES DES COMMANDES
 ================================ */
-class matchObject {
-    constructor(data = {}) {
-        return {
-            filled: data.filled ?? false,
-            id: data.id ?? null,
-            locked: data.locked ?? false,
-            cooldownEnd: data.cooldownEnd ?? 0,
-            boxed: data.boxed ?? { trued: false, level: 0 },
-            product: data.product ?? {
-                items: [],
-                energyConsomation: false,
-                possibility: false
+const COMMAND_PERSONS = [
+    { img: "camille.png", levelGain: 0.1, difficulty: 1 },
+    { img: "pripri farceur.png", levelGain: 0.1, difficulty: 1 },
+    { img: "pripri gourmand.png", levelGain: 0.3, difficulty: 3 },
+    { img: "dixo.png", levelGain: 0.2, difficulty: 2 },
+    { img: "maman pripri.png", levelGain: 0.15, difficulty: 2 },
+    { img: "papa pripri.png", levelGain: 0.15, difficulty: 2 },
+    { img: "pripri du bout du monde.png", levelGain: 0.25, difficulty: 3 },
+    { img: "plancequot.png", levelGain: 0, difficulty: 3, noReward: true },
+    { img: "pripri inteligent.png", levelGain: 0.2, difficulty: 2 },
+    { img: "agent d'entretient milliminutes.png", levelGain: 0.1, difficulty: 1 },
+    { img: "djixy.png", levelGain: 0.25, difficulty: 3 }
+];
+
+/* ===============================
+   DONNÉES JOUEUR
+================================ */
+const gamesStorage = JSON.parse(localStorage.games || "{}");
+gamesStorage.match ??= { level: 1 };
+localStorage.games = JSON.stringify(gamesStorage);
+
+/* ===============================
+   MODÈLE COMMANDE
+================================ */
+class AwaitCommand {
+    constructor(person, targets) {
+        this.person = person;
+        this.targets = targets;
+        this.progress = {};
+        targets.forEach(t => this.progress[t.id] = 0);
+        this.el = null;
+    }
+}
+
+/* ===============================
+   GÉNÉRATION DES OBJECTIFS
+================================ */
+function generateTargets(difficulty) {
+    const ids = Object.keys(OBJECT_NAMES);
+    const amount = difficulty + 1;
+
+    return Array.from({ length: amount }, () => {
+        const id = ids[Math.floor(Math.random() * ids.length)];
+        return { id, qty: Math.ceil(Math.random() * difficulty) };
+    });
+}
+
+/* ===============================
+   COMMANDES ACTIVES
+================================ */
+const commandContainer = document.querySelector(".command");
+const activeCommands = [];
+
+/* ===============================
+   SPAWN COMMANDE
+================================ */
+function spawnCommand() {
+    if (activeCommands.length >= 3) return;
+
+    const person =
+        COMMAND_PERSONS[Math.floor(Math.random() * COMMAND_PERSONS.length)];
+    const targets = generateTargets(person.difficulty);
+    const cmd = new AwaitCommand(person, targets);
+
+    const picture = document.createElement("div");
+    picture.className = "command-picture";
+    picture.innerHTML = `<img src="${person.img}">`;
+
+    const awaitDiv = document.createElement("div");
+    awaitDiv.className = "await-command";
+    awaitDiv.innerHTML = `
+        <div class="reward">
+            ${
+                person.noReward
+                    ? "<div>⚠️ aucune récompense</div>"
+                    : `<div>+${Math.round(person.levelGain * 100)}% niveau</div>`
             }
-        };
+        </div>
+        <div class="cible"></div>
+    `;
+
+    cmd.el = awaitDiv;
+
+    commandContainer.appendChild(picture);
+    commandContainer.appendChild(awaitDiv);
+
+    activeCommands.push(cmd);
+    renderTargets(cmd);
+}
+
+/* ===============================
+   AFFICHAGE DES CIBLES
+================================ */
+function renderTargets(cmd) {
+    const cible = cmd.el.querySelector(".cible");
+    cible.innerHTML = "";
+
+    cmd.targets.forEach(t => {
+        const div = document.createElement("div");
+        div.textContent =
+            `${OBJECT_NAMES[t.id]} ${cmd.progress[t.id]}/${t.qty}`;
+        cible.appendChild(div);
+    });
+}
+
+/* ===============================
+   LIVRAISON OBJET
+================================ */
+function deliverObject(obj) {
+    for (const cmd of activeCommands) {
+        const target = cmd.targets.find(t => t.id === obj.id);
+        if (!target) continue;
+
+        if (cmd.progress[obj.id] < target.qty) {
+            cmd.progress[obj.id]++;
+            renderTargets(cmd);
+            checkCommandDone(cmd);
+            return true;
+        }
     }
+    return false;
 }
 
 /* ===============================
-   DONNÉES INITIALES
+   COMMANDE TERMINÉE
 ================================ */
-const preInitiation = {
-    energy: { level: 100 },
-    level: 1,
-    grid: [
-        [
-            { filled: true, id: "RDP3", locked: true, cooldownEnd: Date.now() + 5 * 60 * 1000, boxed: { trued: true, level: 2 }, product: { items: [], energyConsomation: true, possibility: false } },
-            { filled: true, id: "CPP2", locked: true, cooldownEnd: Date.now() + 90 * 1000, boxed: { trued: true, level: 0 }, product: { items: [], energyConsomation: true, possibility: false } }
-        ]
-    ]
-};
+function checkCommandDone(cmd) {
+    const done = cmd.targets.every(
+        t => cmd.progress[t.id] >= t.qty
+    );
+    if (!done) return;
 
-/* ===============================
-   LOCAL STORAGE
-================================ */
-if (!localStorage.games) {
-    localStorage.games = JSON.stringify({ match: preInitiation });
-}
-const gamesStorage = JSON.parse(localStorage.games);
-
-/* ===============================
-   OUTILS
-================================ */
-function getRemaining(cell) {
-    return Math.max(0, (cell.cooldownEnd || 0) - Date.now());
-}
-
-function getUnlockCost(cell) {
-    const remaining = getRemaining(cell);
-    if (remaining <= 0) return 0;
-    return Math.ceil(remaining / (2 * 60 * 1000)) * 50;
-}
-
-function formatTime(ms) {
-    const s = Math.ceil(ms / 1000);
-    return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
-}
-
-/* ===============================
-   RENDU GRILLE
-================================ */
-const gridCells = document.querySelectorAll("#grid th");
-
-gamesStorage.match.grid.flat().forEach((obj, i) => {
-    const cell = gridCells[i];
-    const data = new matchObject(obj);
-    cell.matchData = data;
-
-    if (data.filled) {
-        cell.setAttribute("completed", "");
-        const img = document.createElement("img");
-        img.src = `icons/${data.id}.png`;
-        img.draggable = false;
-        if (data.boxed.trued) img.hidden = true;
-        if (data.locked) cell.setAttribute("disabled", "");
-        cell.appendChild(img);
+    if (!cmd.person.noReward) {
+        gamesStorage.match.level += cmd.person.levelGain;
     }
-});
+
+    const picture = cmd.el.previousElementSibling;
+    picture?.remove();
+    cmd.el.remove();
+
+    activeCommands.splice(activeCommands.indexOf(cmd), 1);
+    spawnCommand();
+
+    localStorage.games = JSON.stringify(gamesStorage);
+}
 
 /* ===============================
-   SÉLECTION
+   DOUBLE CLIC SUR GRILLE
 ================================ */
-let selectedCell = null;
-const bubble = document.querySelector(".textBuBule");
-const options = document.getElementById("options");
-const unlockOption = options.querySelector(".unlock");
+document.querySelectorAll("#grid th").forEach(cell => {
+    cell.addEventListener("dblclick", () => {
+        const obj = cell.matchData;
+        if (!obj) return;
 
-gridCells.forEach(th => {
-    th.addEventListener("click", () => {
-        if (!th.matchData) return;
-        selectedCell = th.matchData;
-        updateBubble();
+        if (deliverObject(obj)) {
+            cell.innerHTML = "";
+            cell.removeAttribute("completed");
+            cell.matchData = null;
+        }
     });
 });
 
 /* ===============================
-   BUBBLE / OPTIONS
+   INIT
 ================================ */
-function updateBubble() {
-    if (!selectedCell) {
-        bubble.setAttribute("no-selection", "");
-        return;
-    }
-
-    bubble.removeAttribute("no-selection");
-
-    if (!selectedCell.locked) {
-        unlockOption.hidden = true;
-        return;
-    }
-
-    const remaining = getRemaining(selectedCell);
-    const cost = getUnlockCost(selectedCell);
-
-    unlockOption.hidden = false;
-    unlockOption.textContent =
-        cost > 0
-            ? `dévérrouiller cet objet [${cost}🪙]`
-            : "dévérrouiller cet objet";
-
-    bubble.style.borderColor =
-        remaining > 2 * 60 * 1000 ? "red" : "blue";
-}
-
-/* ===============================
-   ACTION SELECT
-================================ */
-options.addEventListener("change", () => {
-    const opt = options.selectedOptions[0];
-    if (!opt || !selectedCell) return;
-
-    if (opt.classList.contains("unlock")) {
-        const cost = getUnlockCost(selectedCell);
-        const moneyUI = document.querySelector(".money");
-        let money = Number(moneyUI.textContent);
-
-        if (money < cost) {
-            options.value = "options";
-            return;
-        }
-
-        money -= cost;
-        moneyUI.textContent = money;
-
-        selectedCell.locked = false;
-        selectedCell.cooldownEnd = 0;
-
-        updateBubble();
-    }
-
-    options.value = "options";
-});
-
-/* ===============================
-   RAFRAÎCHISSEMENT TEMPS RÉEL
-================================ */
-setInterval(() => {
-    if (selectedCell) updateBubble();
-    localStorage.games = JSON.stringify(gamesStorage);
-}, 1000);
+spawnCommand();
+spawnCommand();

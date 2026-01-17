@@ -202,3 +202,130 @@ gamesStorage.match.grid.at().forEach((a, b) => {
     },
     false,
   );
+/* ===============================
+   ÉTAT GLOBAL
+================================ */
+const player = {
+  money: 0,
+  energy: 0
+};
+
+let selectedCell = null;
+
+/* ===============================
+   OUTILS
+================================ */
+function formatTime(ms) {
+  const s = Math.ceil(ms / 1000);
+  const m = Math.floor(s / 60);
+  const r = s % 60;
+  return `${m}:${r.toString().padStart(2, "0")}`;
+}
+
+function getRemaining(cell) {
+  if (!cell.cooldownEnd) return 0;
+  return Math.max(0, cell.cooldownEnd - Date.now());
+}
+
+function getUnlockCost(cell) {
+  const remaining = getRemaining(cell);
+  if (remaining <= 0) return 0;
+  return Math.ceil(remaining / (2 * 60 * 1000)) * 50;
+}
+
+/* ===============================
+   SÉLECTION DE CASE
+================================ */
+document.querySelectorAll("#grid th").forEach(th => {
+  th.addEventListener("click", () => {
+    selectedCell = th;
+    updateOptions(th);
+  });
+});
+
+/* ===============================
+   OPTIONS (SELECT)
+================================ */
+const optionsSelect = document.getElementById("options");
+
+optionsSelect.addEventListener("change", () => {
+  const option = optionsSelect.selectedOptions[0];
+  if (!option || !selectedCell) return;
+
+  // 🔓 DÉVERROUILLER = payer + skip cooldown + ouverture
+  if (option.classList.contains("unlock")) {
+    const cost = getUnlockCost(selectedCell);
+    if (player.money < cost) return;
+
+    player.money -= cost;
+    updateMoneyUI();
+
+    selectedCell.locked = false;
+    selectedCell.cooldownEnd = null;
+
+    openOrProduce(selectedCell);
+  }
+
+  optionsSelect.selectedIndex = 0;
+  updateOptions(selectedCell);
+});
+
+/* ===============================
+   MISE À JOUR DES OPTIONS
+================================ */
+function updateOptions(cell) {
+  const bubble = document.querySelector(".textBuBule");
+  const unlock = optionsSelect.querySelector(".unlock");
+  const lock = optionsSelect.querySelector(".lock");
+
+  if (!cell) {
+    bubble.setAttribute("no-selection", "");
+    return;
+  }
+
+  bubble.removeAttribute("no-selection");
+
+  const remaining = getRemaining(cell);
+
+  // 🔒 verrouiller
+  lock.disabled = !!cell.locked;
+  lock.hidden = false;
+
+  // 🔓 déverrouiller
+  if (remaining > 0) {
+    const cost = getUnlockCost(cell);
+    unlock.hidden = false;
+    unlock.disabled = player.money < cost;
+    unlock.textContent = `dévérrouiller cet objet [${cost}🪙]`;
+  } else {
+    unlock.hidden = true;
+  }
+}
+
+/* ===============================
+   PRODUCTION / OUVERTURE
+================================ */
+function openOrProduce(cell) {
+  // producteur principal (⚡)
+  if (cell.classList.contains("producer")) {
+    produce(cell);
+  } else {
+    cell.setAttribute("completed", "");
+  }
+}
+
+function produce(cell) {
+  // exemple simple (à adapter à tes images)
+  const img = cell.querySelector("img") || document.createElement("img");
+  img.src = "icons/RDP1.png";
+  img.hidden = false;
+  cell.appendChild(img);
+  cell.setAttribute("completed", "");
+}
+
+/* ===============================
+   UI MONEY / ENERGY
+================================ */
+function updateMoneyUI() {
+  document.querySelector(".money").textContent = player.money;
+}

@@ -1,3 +1,27 @@
+
+/* ===============================
+   OBJET NAME
+================================ */
+const OBJECT_NAMES = {
+    // === PRIPRI (CPP) ===
+    CPP1: "pripri simple",
+    CPP2: "pripri double",
+    CPP3: "pripri triple",
+    CPP4: "pripri quadruple",
+    CPP5: "pripri triple avec un RJ45",
+    CPP6: "pripri triple avec 3 USB et un RJ45",
+    CPP7: "pripri avec 7 USB",
+    CPP8: "⚡ maman pripri",
+    CPP9: "⚡ pripri extraterrestre magique",
+
+    // === BOÎTES / PRODUCTEURS (RDP) ===
+    RDP1: "boîte vide",
+    RDP2: "⚡ boîte à un pripri",
+    RDP3: "⚡ boîte un peu pleine",
+    RDP4: "⚡ boîte bien pleine",
+    RDP5: "⚡boîte pleine",
+    RDP6: "⚡ ville de priprix"
+};
 /* ===============================
    OBJET MATCH
 ================================ */

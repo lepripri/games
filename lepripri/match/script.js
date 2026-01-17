@@ -1,21 +1,51 @@
 /* =====================================================
-   PRIPRI GAME – COMMANDES & PROGRESSION (FINAL)
-   compatible avec TON HTML / CSS
+   LE PRIPRI – MATCH GAME (JS FINAL AVANT PLAY STORE)
+   Version web (GitHub Pages) -> offline-ready
+   Auteur : Camille
 ===================================================== */
 
 /* ===============================
-   NOMS DES OBJETS
+   MESSAGE ERREUR (FOURNI)
+================================ */
+function showMessage(data, OPTIONALendScript) {
+    var closer = () => {
+        setTimeout(() => {
+            dialog.close();
+            dialog.remove();
+            if (OPTIONALendScript) OPTIONALendScript();
+        }, 350);
+    }, dialog = document.createElement("dialog");
+
+    dialog.innerHTML = '<img src="https://lepripri.github.io/lepripri/icons/Warning.png">' + data;
+    dialog.className = "message";
+
+    var Opener = () => {
+        if (document.querySelector('dialog.message')) return null;
+        document.body.appendChild(dialog);
+        dialog.showModal();
+        dialog.addEventListener("click", closer);
+        dialog.addEventListener("keydown", closer);
+        document.addEventListener("keydown", closer);
+        setTimeout(closer, 2000);
+        return dialog;
+    };
+    return Opener();
+}
+
+/* ===============================
+   NOM DES OBJETS
 ================================ */
 const OBJECT_NAMES = {
     CPP1: "pripri simple",
     CPP2: "pripri double",
     CPP3: "pripri triple",
     CPP4: "pripri quadruple",
-    CPP5: "pripri RJ45",
-    CPP6: "pripri USB+RJ45",
+    CPP5: "pripri triple RJ45",
+    CPP6: "pripri triple USB + RJ45",
     CPP7: "pripri 7 USB",
     CPP8: "⚡ maman pripri",
-    CPP9: "⚡ pripri extraterrestre",
+    CPP9: "⚡ pripri extraterrestre magique",
+
     RDP1: "boîte vide",
     RDP2: "⚡ boîte à un pripri",
     RDP3: "⚡ boîte un peu pleine",
@@ -25,172 +55,111 @@ const OBJECT_NAMES = {
 };
 
 /* ===============================
-   PERSONNAGES DES COMMANDES
+   IMAGE STRICTE (OFFLINE)
 ================================ */
-const COMMAND_PERSONS = [
-    { img: "camille.png", levelGain: 0.1, difficulty: 1 },
-    { img: "pripri farceur.png", levelGain: 0.1, difficulty: 1 },
-    { img: "pripri gourmand.png", levelGain: 0.3, difficulty: 3 },
-    { img: "dixo.png", levelGain: 0.2, difficulty: 2 },
-    { img: "maman pripri.png", levelGain: 0.15, difficulty: 2 },
-    { img: "papa pripri.png", levelGain: 0.15, difficulty: 2 },
-    { img: "pripri du bout du monde.png", levelGain: 0.25, difficulty: 3 },
-    { img: "plancequot.png", levelGain: 0, difficulty: 3, noReward: true },
-    { img: "pripri inteligent.png", levelGain: 0.2, difficulty: 2 },
-    { img: "agent d'entretient milliminutes.png", levelGain: 0.1, difficulty: 1 },
-    { img: "djixy.png", levelGain: 0.25, difficulty: 3 }
-];
+let IMAGE_ERROR_SHOWN = false;
 
-/* ===============================
-   DONNÉES JOUEUR
-================================ */
-const gamesStorage = JSON.parse(localStorage.games || "{}");
-gamesStorage.match ??= { level: 1 };
-localStorage.games = JSON.stringify(gamesStorage);
-
-/* ===============================
-   MODÈLE COMMANDE
-================================ */
-class AwaitCommand {
-    constructor(person, targets) {
-        this.person = person;
-        this.targets = targets;
-        this.progress = {};
-        targets.forEach(t => this.progress[t.id] = 0);
-        this.el = null;
-    }
-}
-
-/* ===============================
-   GÉNÉRATION DES OBJECTIFS
-================================ */
-function generateTargets(difficulty) {
-    const ids = Object.keys(OBJECT_NAMES);
-    const amount = difficulty + 1;
-
-    return Array.from({ length: amount }, () => {
-        const id = ids[Math.floor(Math.random() * ids.length)];
-        return { id, qty: Math.ceil(Math.random() * difficulty) };
-    });
-}
-
-/* ===============================
-   COMMANDES ACTIVES
-================================ */
-const commandContainer = document.querySelector(".command");
-const activeCommands = [];
-
-/* ===============================
-   SPAWN COMMANDE
-================================ */
-function spawnCommand() {
-    if (activeCommands.length >= 3) return;
-
-    const person =
-        COMMAND_PERSONS[Math.floor(Math.random() * COMMAND_PERSONS.length)];
-    const targets = generateTargets(person.difficulty);
-    const cmd = new AwaitCommand(person, targets);
-
-    const picture = document.createElement("div");
-    picture.className = "command-picture";
-    picture.innerHTML = `<img src="${person.img}">`;
-
-    const awaitDiv = document.createElement("div");
-    awaitDiv.className = "await-command";
-    awaitDiv.innerHTML = `
-        <div class="reward">
-            ${
-                person.noReward
-                    ? "<div>⚠️ aucune récompense</div>"
-                    : `<div>+${Math.round(person.levelGain * 100)}% niveau</div>`
+function loadImageStrict(id) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.src = `icons/${id}.png`;
+        img.onload = () => resolve(img);
+        img.onerror = () => {
+            if (!IMAGE_ERROR_SHOWN) {
+                IMAGE_ERROR_SHOWN = true;
+                showMessage(`
+                    <b>Erreur critique</b><br><br>
+                    Image manquante : <code>${id}.png</code><br>
+                    L'application fonctionne hors ligne.<br><br>
+                    Vérifie les assets avant Play Store.
+                `);
             }
-        </div>
-        <div class="cible"></div>
-    `;
-
-    cmd.el = awaitDiv;
-
-    commandContainer.appendChild(picture);
-    commandContainer.appendChild(awaitDiv);
-
-    activeCommands.push(cmd);
-    renderTargets(cmd);
-}
-
-/* ===============================
-   AFFICHAGE DES CIBLES
-================================ */
-function renderTargets(cmd) {
-    const cible = cmd.el.querySelector(".cible");
-    cible.innerHTML = "";
-
-    cmd.targets.forEach(t => {
-        const div = document.createElement("div");
-        div.textContent =
-            `${OBJECT_NAMES[t.id]} ${cmd.progress[t.id]}/${t.qty}`;
-        cible.appendChild(div);
+            reject(id);
+        };
     });
 }
 
 /* ===============================
-   LIVRAISON OBJET
+   STRUCTURE OBJET
 ================================ */
-function deliverObject(obj) {
-    for (const cmd of activeCommands) {
-        const target = cmd.targets.find(t => t.id === obj.id);
-        if (!target) continue;
-
-        if (cmd.progress[obj.id] < target.qty) {
-            cmd.progress[obj.id]++;
-            renderTargets(cmd);
-            checkCommandDone(cmd);
-            return true;
-        }
+class MatchObject {
+    constructor(data) {
+        this.filled = data.filled;
+        this.id = data.id;
+        this.locked = data.locked || false;
+        this.cooldownEnd = data.cooldownEnd || 0;
+        this.boxed = data.boxed || { trued: false, level: 0 };
+        this.product = data.product || { items: [], energyConsomation: false };
     }
-    return false;
 }
 
 /* ===============================
-   COMMANDE TERMINÉE
+   DONNÉES INITIALES
 ================================ */
-function checkCommandDone(cmd) {
-    const done = cmd.targets.every(
-        t => cmd.progress[t.id] >= t.qty
-    );
-    if (!done) return;
+const GAME_DATA = {
+    energy: { value: 100, max: 100 },
+    money: 0,
+    level: 1,
+    grid: [
+        { filled: true, id: "RDP3", locked: true, cooldownEnd: Date.now() + 300000 },
+        { filled: true, id: "CPP2", locked: true, cooldownEnd: Date.now() + 90000 }
+    ]
+};
 
-    if (!cmd.person.noReward) {
-        gamesStorage.match.level += cmd.person.levelGain;
-    }
-
-    const picture = cmd.el.previousElementSibling;
-    picture?.remove();
-    cmd.el.remove();
-
-    activeCommands.splice(activeCommands.indexOf(cmd), 1);
-    spawnCommand();
-
-    localStorage.games = JSON.stringify(gamesStorage);
+/* ===============================
+   RENDU GRILLE
+================================ */
+async function renderGrid() {
+    const cells = document.querySelectorAll("#grid th");
+    GAME_DATA.grid.forEach(async (data, i) => {
+        if (!data.filled || !cells[i]) return;
+        const obj = new MatchObject(data);
+        try {
+            const img = await loadImageStrict(obj.id);
+            img.draggable = false;
+            img.title = OBJECT_NAMES[obj.id] || obj.id;
+            cells[i].innerHTML = "";
+            cells[i].appendChild(img);
+            cells[i].matchData = obj;
+            cells[i].setAttribute("completed", "");
+            if (obj.locked) cells[i].setAttribute("disabled", "");
+        } catch (e) {}
+    });
 }
 
 /* ===============================
-   DOUBLE CLIC SUR GRILLE
+   BUBBLE / OPTIONS
+================================ */
+const bubble = document.querySelector(".textBuBule");
+const options = document.getElementById("options");
+let selectedCell = null;
+
+function updateBubble() {
+    if (!selectedCell) {
+        bubble.setAttribute("no-selection", "");
+        return;
+    }
+    bubble.removeAttribute("no-selection");
+}
+
+/* ===============================
+   SÉLECTION CELLULE
 ================================ */
 document.querySelectorAll("#grid th").forEach(cell => {
-    cell.addEventListener("dblclick", () => {
-        const obj = cell.matchData;
-        if (!obj) return;
-
-        if (deliverObject(obj)) {
-            cell.innerHTML = "";
-            cell.removeAttribute("completed");
-            cell.matchData = null;
-        }
+    cell.addEventListener("click", () => {
+        selectedCell = cell.matchData || null;
+        updateBubble();
     });
 });
 
 /* ===============================
-   INIT
+   LANCEMENT
 ================================ */
-spawnCommand();
-spawnCommand();
+window.addEventListener("load", () => {
+    renderGrid();
+});
+
+/* =====================================================
+   FIN – prêt pour GitHub Pages
+   (offline strict avant Play Store)
+===================================================== */

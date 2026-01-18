@@ -8,7 +8,10 @@ const ENERGY_MAX_LEVEL = 5;
 
 // Coffres / non fusionnables
 const CHEST_IDS = ["CFR1","CFR2","CFR3","CFR4","CFR5","CFR6","CFR7","CEN1"];
-
+const NON_FUSIONABLE_PREFIX = [
+    "CFR",   // coffres classiques
+    "CEN"    // coffres énergie
+];
 // Joker
 const JOKER_ID = "JOKER";
 

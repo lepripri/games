@@ -262,3 +262,37 @@ function getBoostValue() {
 setInterval(() => {
     regenEnergy();
 }, 1000);
+/* ===============================
+   INITIALISATION DU PLATEAU
+================================ */
+
+function initGrid() {
+    // Producteur de base (ex: RDP2 ⚡)
+    placeInGrid(new GameObject({
+        id: "RDP2",
+        level: 1,
+        producer: true,
+        energyCost: 1
+    }));
+
+    // Objet de départ
+    placeInGrid(new GameObject({
+        id: "CPP1",
+        level: 1
+    }));
+
+    // Coffre énergie de départ (cliquable)
+    placeInGrid(new GameObject({
+        id: "CEN1",
+        level: 1,
+        producer: true,
+        energyCost: 0,
+        maxUse: 10
+    }));
+
+    generateCommands(1);
+}
+
+// 🔥 LANCEMENT
+initGrid();
+updateEnergyUI();

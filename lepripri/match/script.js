@@ -1,30 +1,32 @@
+/* ===============================
+   MESSAGE SYSTÈME (ANTI-SPAM)
+================================ */
+
+let MESSAGE_LOCK = false;
+
 function showMessage(data, OPTIONALendScript) {
+    if (MESSAGE_LOCK) return null;
+    MESSAGE_LOCK = true;
+
     const dialog = document.createElement("dialog");
     dialog.className = "message";
-    dialog.innerHTML =
-        '<img src="icons/Warning.png">' + data;
+    dialog.innerHTML = '<img src="icons/Warning.png">' + data;
 
-    const closer = () => {
-        setTimeout(() => {
-            if (dialog.open) dialog.close();
-            dialog.remove();
-            if (OPTIONALendScript) OPTIONALendScript();
-        }, 350);
+    const closeMessage = () => {
+        if (!dialog.open) return;
+        dialog.close();
+        dialog.remove();
+        MESSAGE_LOCK = false;
+        if (OPTIONALendScript) OPTIONALendScript();
     };
-
-    // ⛔ empêche la récursion
-    if (document.querySelector("dialog.message")) {
-        return null;
-    }
 
     document.body.appendChild(dialog);
     dialog.showModal();
 
-    dialog.addEventListener("click", closer);
-    dialog.addEventListener("keydown", closer);
-    document.addEventListener("keydown", closer);
+    dialog.addEventListener("click", closeMessage);
+    dialog.addEventListener("keydown", closeMessage);
 
-    setTimeout(closer, 2000);
+    setTimeout(closeMessage, 2000);
 
     return dialog;
 }

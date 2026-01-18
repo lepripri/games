@@ -1,391 +1,225 @@
-/* ===============================
-   TEST UNIQUE DES ICÔNES
-================================ */
-
-const ICONS_TO_CHECK = [
-    // Pripri
-    "CPP1.png","CPP2.png","CPP3.png","CPP4.png","CPP5.png",
-    "CPP6.png","CPP7.png","CPP8.png","CPP9.png",
-
-    // Producteurs / boîtes
-    "RDP1.png","RDP2.png","RDP3.png","RDP4.png","RDP5.png","RDP6.png",
-
-    // Énergie
-    "ENR1.png","ENR2.png","ENR3.png","ENR4.png","ENR5.png",
-
-    // Pièces
-    "PCS1.png","PCS2.png","PCS3.png","PCS4.png","PCS5.png",
-
-    // Coffres énergie
-    "CEN1.png",
-
-    // Outils
-    "TBC1.png","TBC2.png",
-
-    // UI
-    "Warning.png"
-];
-
-let ICON_CHECK_DONE = false;
-
-function checkIconsOnce() {
-    if (ICON_CHECK_DONE) return;
-    ICON_CHECK_DONE = true;
-
-    let missing = [];
-    let checked = 0;
-
-    ICONS_TO_CHECK.forEach(name => {
-        const img = new Image();
-        img.onload = () => checked++;
-        img.onerror = () => {
-            missing.push(name);
-            checked++;
-        };
-        img.src = "icons/" + name;
-    });
-
-    const wait = setInterval(() => {
-        if (checked >= ICONS_TO_CHECK.length) {
-            clearInterval(wait);
-
-            if (missing.length > 0) {
-                showMessage(
-                    "⚠️ Icônes manquantes :<br>" +
-                    missing.join("<br>")
-                );
-            }
-        }
-    }, 50);
-}
-
-// 🔥 appel UNIQUE
-checkIconsOnce();
+/* =====================================================
+   PRIPRI MATCH — SCRIPT FINAL STABLE
+   énergie par défaut : 100
+===================================================== */
 
 /* ===============================
-   MESSAGE SYSTÈME (ANTI-SPAM)
+   CONFIG GLOBALE
 ================================ */
-
-let MESSAGE_LOCK = false;
-
-function showMessage(data, OPTIONALendScript) {
-    if (MESSAGE_LOCK) return null;
-    MESSAGE_LOCK = true;
-
-    const dialog = document.createElement("dialog");
-    dialog.className = "message";
-    dialog.innerHTML = '<img src="icons/Warning.png">' + data;
-
-    const closeMessage = () => {
-        if (!dialog.open) return;
-        dialog.close();
-        dialog.remove();
-        MESSAGE_LOCK = false;
-        if (OPTIONALendScript) OPTIONALendScript();
-    };
-
-    document.body.appendChild(dialog);
-    dialog.showModal();
-
-    dialog.addEventListener("click", closeMessage);
-    dialog.addEventListener("keydown", closeMessage);
-
-    setTimeout(closeMessage, 2000);
-
-    return dialog;
-}
-/* ===============================
-   CONSTANTES GLOBALES
-================================ */
-
-// objets NON fusionnables par préfixe
-const NON_FUSIONABLE_PREFIX = ["CFR", "CEN", "TBC"];
-
-// valeurs énergie
-const ENERGY_VALUES = [2, 5, 15, 40, 100];
-
-// limites commandes
-const COMMAND_MIN = 3;
-const COMMAND_MAX = 6;
-
-// énergie globale
-const ENERGY_MAX = 100;
-const ENERGY_REGEN_TIME = 2 * 60 * 1000; // 1 énergie / 2 min
+const GRID_COLS = 7;
+const GRID_ROWS = 8;
+const MAX_ENERGY = 100;
+const ENERGY_REGEN_TIME = 120000; // 1 énergie / 2 min
+const NON_FUSIONABLE_PREFIX = ["CFR", "CEN"];
+const JOKER_ID = "JOKER";
 
 /* ===============================
-   OUTILS IMAGES
+   DONNÉES JOUEUR
 ================================ */
-
-// corrige PCS01 → PCS1
-function getIconPath(id) {
-    const clean = id.replace(/0+(\d)/, "$1");
-    return `icons/${clean}.png`;
-}
-
-function createImg(id) {
-    const img = document.createElement("img");
-    img.src = getIconPath(id);
-    img.draggable = false;
-    img.onerror = () => {
-        showMessage("❌ Image manquante : " + img.src);
-        img.src = "icons/Warning.png";
-    };
-    return img;
-}
+const player = {
+    money: 0,
+    energy: MAX_ENERGY,
+    level: 1.0,
+    lastEnergyTick: Date.now()
+};
 
 /* ===============================
-   OBJET JEU
+   OBJETS (NOMS)
 ================================ */
+const OBJECT_NAMES = {
+    CPP1: "pripri simple",
+    CPP2: "pripri double",
+    CPP3: "pripri triple",
+    CPP4: "pripri quadruple",
+    CPP5: "pripri RJ45",
+    CPP6: "pripri USB",
+    CPP7: "pripri 7 USB",
+    CPP8: "⚡ maman pripri",
+    CPP9: "⚡ pripri extraterrestre",
 
-class GameObject {
-    constructor({ id, level = 1, locked = false, producer = false, energyCost = 0, maxUse = null }) {
+    RDP1: "boîte vide",
+    RDP2: "⚡ boîte à pripri",
+    RDP3: "⚡ boîte un peu pleine",
+    RDP4: "⚡ boîte bien pleine",
+    RDP5: "⚡ boîte pleine",
+    RDP6: "⚡ ville de priprix",
+
+    PCS1: "1 pièce",
+    PCS2: "3 pièces",
+    PCS3: "7 pièces",
+    PCS4: "15 pièces",
+    PCS5: "32 pièces",
+
+    ENR1: "⚡ 2 énergies",
+    ENR2: "⚡ 5 énergies",
+    ENR3: "⚡ 15 énergies",
+    ENR4: "⚡ 40 énergies",
+    ENR5: "⚡ 100 énergies"
+};
+
+/* ===============================
+   MATCH OBJECT
+================================ */
+class MatchObject {
+    constructor(id, level = 1) {
         this.id = id;
         this.level = level;
-        this.locked = locked;
-        this.producer = producer;
-        this.energyCost = energyCost;
-        this.usesLeft = maxUse;
+        this.locked = false;
         this.cooldownEnd = 0;
-    }
-}
-
-/* ===============================
-   MERGE
-================================ */
-
-function canMerge(a, b) {
-    if (!a || !b) return false;
-
-    // joker
-    if (a.id === "JOKER" || b.id === "JOKER") {
-        return !isChest(a) && !isChest(b);
-    }
-
-    if (a.id !== b.id) return false;
-    if (a.level !== b.level) return false;
-
-    return true;
-}
-
-function isChest(obj) {
-    return NON_FUSIONABLE_PREFIX.some(p => obj.id.startsWith(p));
-}
-
-function mergeObjects(a, b) {
-    return new GameObject({
-        id: a.id,
-        level: a.level + 1,
-        producer: a.producer,
-        energyCost: a.energyCost
-    });
-}
-
-/* ===============================
-   ÉNERGIE
-================================ */
-
-let energy = 50;
-let lastEnergyTick = Date.now();
-
-function regenEnergy() {
-    const now = Date.now();
-    const gain = Math.floor((now - lastEnergyTick) / ENERGY_REGEN_TIME);
-    if (gain > 0) {
-        energy = Math.min(ENERGY_MAX, energy + gain);
-        lastEnergyTick += gain * ENERGY_REGEN_TIME;
-        updateEnergyUI();
-    }
-}
-
-/* ===============================
-   PRODUCTEURS
-================================ */
-
-function useProducer(cell, boost = 1) {
-    const obj = cell.obj;
-    if (!obj.producer) return;
-
-    const cost = obj.energyCost * boost;
-    if (obj.energyCost > 0 && energy < cost) return;
-
-    energy -= cost;
-    updateEnergyUI();
-
-    const levelBonus = boost === 2 ? 1 : boost === 4 ? 2 : 0;
-
-    const produced = new GameObject({
-        id: obj.id,
-        level: obj.level + levelBonus
-    });
-
-    placeInGrid(produced);
-
-    if (obj.usesLeft !== null) {
-        obj.usesLeft--;
-        if (obj.usesLeft <= 0) removeObject(cell);
-    }
-}
-
-/* ===============================
-   COFFRE ÉNERGIE (CEN1)
-================================ */
-
-function openEnergyChest(cell) {
-    const chest = cell.obj;
-    for (let i = 0; i < 10; i++) {
-        const lvl = Math.floor(Math.random() * 3) + 1;
-        const val = ENERGY_VALUES[lvl - 1];
-        placeInGrid(new GameObject({ id: "ENERGY", level: lvl, value: val }));
-    }
-    removeObject(cell);
-}
-
-/* ===============================
-   COMMANDES
-================================ */
-
-const PEOPLE = [
-    "camille.png",
-    "pripri farceur.png",
-    "pripri gourmand.png",
-    "dixo.png",
-    "maman pripri.png",
-    "papa pripri.png",
-    "pripri du bout du monde.png",
-    "plancequot.png",
-    "pripri inteligent.png",
-    "djixy.png"
-];
-
-function generateCommands(playerLevel) {
-    const count = Math.floor(Math.random() * (COMMAND_MAX - COMMAND_MIN + 1)) + COMMAND_MIN;
-    const container = document.querySelector(".await-command");
-    container.innerHTML = "";
-
-    for (let i = 0; i < count; i++) {
-        const div = document.createElement("div");
-        div.className = "command";
-
-        const pic = document.createElement("div");
-        pic.className = "command-picture";
-        const img = document.createElement("img");
-        img.src = `icons/${PEOPLE[Math.floor(Math.random() * PEOPLE.length)]}`;
-        pic.appendChild(img);
-
-        const reward = document.createElement("div");
-        reward.className = "reward";
-        reward.innerHTML = `<div>+${30 + playerLevel * 5}🪙</div>`;
-
-        div.appendChild(pic);
-        div.appendChild(reward);
-        container.appendChild(div);
     }
 }
 
 /* ===============================
    GRILLE
 ================================ */
+const gridCells = Array.from(document.querySelectorAll("#grid th"));
 
-const grid = document.querySelectorAll("#grid th");
-
-function placeInGrid(obj) {
-    for (const cell of grid) {
-        if (!cell.obj) {
-            cell.obj = obj;
-            cell.innerHTML = "";
-            cell.appendChild(createImg(obj.id));
-            return true;
-        }
-    }
-    return false;
+function clearGrid() {
+    gridCells.forEach(c => {
+        c.innerHTML = "";
+        c.removeAttribute("completed");
+        c.matchObject = null;
+    });
 }
 
-function removeObject(cell) {
-    cell.obj = null;
+function placeObject(cell, obj) {
     cell.innerHTML = "";
+    const img = document.createElement("img");
+    img.src = `icons/${obj.id}.png`;
+    img.draggable = true;
+    img.dataset.id = obj.id;
+    img.dataset.level = obj.level;
+    cell.appendChild(img);
+    cell.setAttribute("completed", "");
+    cell.matchObject = obj;
 }
 
 /* ===============================
-   UI
+   INITIALISATION PLATEAU
 ================================ */
+clearGrid();
 
-function updateEnergyUI() {
-    const e = document.querySelector(".energy");
-    if (e) e.textContent = energy;
+// objets de départ (exemple jouable)
+placeObject(gridCells[10], new MatchObject("CPP1", 1));
+placeObject(gridCells[11], new MatchObject("CPP1", 1));
+placeObject(gridCells[12], new MatchObject("RDP2", 1));
+
+/* ===============================
+   FUSION
+================================ */
+function canMerge(a, b) {
+    if (!a || !b) return false;
+    if (a.dataset.id !== b.dataset.id) return false;
+
+    for (const p of NON_FUSIONABLE_PREFIX) {
+        if (a.dataset.id.startsWith(p)) return false;
+    }
+
+    return Number(a.dataset.level) === Number(b.dataset.level);
+}
+
+function mergeCells(fromCell, toCell) {
+    const a = fromCell.querySelector("img");
+    const b = toCell.querySelector("img");
+    if (!canMerge(a, b)) return;
+
+    const newLevel = Number(a.dataset.level) + 1;
+    const id = a.dataset.id;
+
+    fromCell.innerHTML = "";
+    fromCell.removeAttribute("completed");
+    fromCell.matchObject = null;
+
+    placeObject(toCell, new MatchObject(id, newLevel));
 }
 
 /* ===============================
-   EVENTS
+   DRAG & DROP
 ================================ */
+let draggedCell = null;
 
-let selected = null;
-
-grid.forEach(cell => {
-    cell.addEventListener("click", () => {
-        selected = cell;
+gridCells.forEach(cell => {
+    cell.addEventListener("dragstart", e => {
+        if (!cell.matchObject) return;
+        draggedCell = cell;
+        e.target.style.opacity = 0.3;
     });
 
-    cell.addEventListener("dblclick", () => {
-        if (!cell.obj) return;
+    cell.addEventListener("dragend", e => {
+        e.target.style.opacity = "";
+    });
 
-        if (cell.obj.id === "CEN1") {
-            openEnergyChest(cell);
-        } else if (cell.obj.producer && !cell.obj.locked) {
-            useProducer(cell, getBoostValue());
+    cell.addEventListener("dragover", e => {
+        if (!cell.matchObject) e.preventDefault();
+    });
+
+    cell.addEventListener("drop", e => {
+        e.preventDefault();
+        if (!draggedCell || draggedCell === cell) return;
+
+        if (cell.matchObject) {
+            mergeCells(draggedCell, cell);
+        } else {
+            cell.appendChild(draggedCell.firstChild);
+            cell.matchObject = draggedCell.matchObject;
+            draggedCell.matchObject = null;
+            draggedCell.innerHTML = "";
+            draggedCell.removeAttribute("completed");
+            cell.setAttribute("completed", "");
         }
     });
 });
 
 /* ===============================
-   BOOST
+   DOUBLE CLIC = RÉCUPÉRER
 ================================ */
+gridCells.forEach(cell => {
+    cell.addEventListener("dblclick", () => {
+        if (!cell.matchObject) return;
 
-function getBoostValue() {
-    const sel = document.getElementById("powerEnergy");
-    if (!sel) return 1;
-    if (sel.value === "2x") return 2;
-    if (sel.value === "4x") return 4;
-    return 1;
-}
+        const id = cell.matchObject.id;
+
+        // pièces
+        if (id.startsWith("PCS")) {
+            const values = [1, 3, 7, 15, 32];
+            player.money += values[cell.matchObject.level - 1] || 1;
+        }
+
+        // énergie
+        if (id.startsWith("ENR")) {
+            const values = [2, 5, 15, 40, 100];
+            player.energy = Math.min(
+                MAX_ENERGY,
+                player.energy + (values[cell.matchObject.level - 1] || 1)
+            );
+        }
+
+        cell.innerHTML = "";
+        cell.matchObject = null;
+        cell.removeAttribute("completed");
+    });
+});
 
 /* ===============================
-   LOOP
+   ÉNERGIE AUTO
 ================================ */
-
 setInterval(() => {
-    regenEnergy();
+    if (player.energy >= MAX_ENERGY) return;
+
+    if (Date.now() - player.lastEnergyTick >= ENERGY_REGEN_TIME) {
+        player.energy++;
+        player.lastEnergyTick = Date.now();
+    }
+
+    document.querySelector(".energy").textContent = player.energy;
 }, 1000);
+
 /* ===============================
-   INITIALISATION DU PLATEAU
+   UI
 ================================ */
+document.querySelector(".money").textContent = player.money;
+document.querySelector(".energy").textContent = player.energy;
 
-function initGrid() {
-    // Producteur de base (ex: RDP2 ⚡)
-    placeInGrid(new GameObject({
-        id: "RDP2",
-        level: 1,
-        producer: true,
-        energyCost: 1
-    }));
-
-    // Objet de départ
-    placeInGrid(new GameObject({
-        id: "CPP1",
-        level: 1
-    }));
-
-    // Coffre énergie de départ (cliquable)
-    placeInGrid(new GameObject({
-        id: "CEN1",
-        level: 1,
-        producer: true,
-        energyCost: 0,
-        maxUse: 10
-    }));
-
-    generateCommands(1);
-}
-
-// 🔥 LANCEMENT
-initGrid();
-updateEnergyUI();
+/* ===============================
+   FIN SCRIPT
+================================ */

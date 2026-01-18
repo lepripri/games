@@ -73,26 +73,27 @@ function getEmptyCell() {
     return [...gridCells].find(c => !c.hasAttribute("completed"));
 }
 
-function spawnObject(id, level = 1) {
-    const cell = getEmptyCell();
+function spawnObject(id, level = 1, forcedCell = null) {
+    const cell = forcedCell || getEmptyCell();
     if (!cell) {
-        showMessage("Plus de place sur le plateau");
+        showMessage("Plateau plein");
         return;
     }
 
     const img = document.createElement("img");
     img.src = `icons/${id}.png`;
     img.draggable = true;
+    img.dataset.id = id;
+    img.dataset.level = level;
 
     img.onerror = () => {
         showMessage(`Image manquante : ${id}.png`);
     };
 
-    img.dataset.id = id;
-    img.dataset.level = level;
-
     cell.appendChild(img);
     cell.setAttribute("completed", "");
+
+    enableDrag(img);
 }
 
 function removeObject(obj) {
@@ -267,4 +268,80 @@ window.addEventListener("load", () => {
     spawnObject("ENERGY", 1);
     spawnObject("ENERGY", 1);
 
+});
+
+function canMerge(a, b) {
+    if (!a || !b) return false;
+
+    const idA = a.dataset.id;
+    const idB = b.dataset.id;
+
+    // coffres interdits
+    if (NON_FUSIONABLE_PREFIX.some(p => idA.startsWith(p) || idB.startsWith(p)))
+        return false;
+
+    // joker
+    if (idA === JOKER_ID || idB === JOKER_ID)
+        return true;
+
+    return (
+        idA === idB &&
+        a.dataset.level === b.dataset.level
+    );
+}
+function mergeObjects(a, b, targetCell) {
+    const idA = a.dataset.id;
+    const idB = b.dataset.id;
+
+    let baseId = idA === JOKER_ID ? idB : idA;
+    let newLevel = Number(a.dataset.level) + 1;
+
+    // suppression
+    a.remove();
+    b.remove();
+
+    targetCell.innerHTML = "";
+    targetCell.removeAttribute("completed");
+
+    spawnObject(baseId, newLevel, targetCell);
+}
+let draggedImg = null;
+
+function enableDrag(img) {
+    img.addEventListener("dragstart", e => {
+        draggedImg = img;
+        setTimeout(() => img.style.opacity = 0.3, 0);
+    });
+
+    img.addEventListener("dragend", () => {
+        draggedImg = null;
+        img.style.opacity = "";
+    });
+}
+
+document.querySelectorAll("#grid th").forEach(cell => {
+
+    cell.addEventListener("dragover", e => e.preventDefault());
+
+    cell.addEventListener("drop", e => {
+        e.preventDefault();
+        if (!draggedImg) return;
+
+        const targetImg = cell.querySelector("img");
+
+        // case vide → déplacement
+        if (!targetImg) {
+            draggedImg.parentElement.removeAttribute("completed");
+            cell.appendChild(draggedImg);
+            cell.setAttribute("completed", "");
+            return;
+        }
+
+        // tentative fusion
+        if (canMerge(draggedImg, targetImg)) {
+            mergeObjects(draggedImg, targetImg, cell);
+        } else {
+            showMessage("Fusion impossible");
+        }
+    });
 });

@@ -1,192 +1,264 @@
-"use strict";
+function showMessage(data, OPTIONALendScript) {
+    var closer = () => {setTimeout(() => {dialog.close();dialog.remove(); if(OPTIONALendScript) {OPTIONALendScript()}}, 350)}, dialog = document.createElement("dialog");dialog.innerHTML = '<img src="https://lepripri.github.io/lepripri/icons/Warning.png">' + data;dialog.className = "message", Opener = () => {if (document.querySelector('dialog.message')) {Opener();return null;}else{document.body.appendChild(dialog);dialog.showModal();dialog.addEventListener("click", closer);dialog.addEventListener("keydown", closer);document.addEventListener("keydown", closer);setTimeout(closer, 2000);return dialog;}}; return Opener();
+}
+/* ===============================
+   CONSTANTES GLOBALES
+================================ */
 
-/* ==========================================================
-   CONSTANTES
-========================================================== */
+// objets NON fusionnables par préfixe
+const NON_FUSIONABLE_PREFIX = ["CFR", "CEN", "TBC"];
 
-const GRID_SIZE = 8;
-const ICON_PATH = "icons/";
-const NON_FUSIONABLE_PREFIX = ["CEN", "CHEST", "COFFRE"]; // FIX ERREUR
-const JOKER_ID = "JOKER";
+// valeurs énergie
+const ENERGY_VALUES = [2, 5, 15, 40, 100];
 
-/* ==========================================================
-   OUTILS
-========================================================== */
+// limites commandes
+const COMMAND_MIN = 3;
+const COMMAND_MAX = 6;
 
-function getIconPath(file) {
-    if (!file) return ICON_PATH + "Warning.png";
-    if (file.startsWith(ICON_PATH)) return file;
-    return ICON_PATH + file;
+// énergie globale
+const ENERGY_MAX = 100;
+const ENERGY_REGEN_TIME = 2 * 60 * 1000; // 1 énergie / 2 min
+
+/* ===============================
+   OUTILS IMAGES
+================================ */
+
+// corrige PCS01 → PCS1
+function getIconPath(id) {
+    const clean = id.replace(/0+(\d)/, "$1");
+    return `icons/${clean}.png`;
 }
 
-function showErrorImage(img, name) {
-    img.onerror = () => {
-        showMessage("Image manquante : " + name);
-        img.src = ICON_PATH + "Warning.png";
-    };
-}
-
-/* ==========================================================
-   ÉTAT DU JEU
-========================================================== */
-
-let selectedCell = null;
-
-const grid = [];
-const board = document.getElementById("grid");
-
-/* ==========================================================
-   INITIALISATION
-========================================================== */
-
-function initGrid() {
-    board.innerHTML = "";
-    grid.length = 0;
-
-    for (let y = 0; y < GRID_SIZE; y++) {
-        const row = [];
-        for (let x = 0; x < GRID_SIZE; x++) {
-            const cell = document.createElement("div");
-            cell.className = "cell";
-            cell.dataset.x = x;
-            cell.dataset.y = y;
-
-            cell.addEventListener("click", () => onCellClick(cell));
-
-            board.appendChild(cell);
-            row.push(null);
-        }
-        grid.push(row);
-    }
-
-    // TEST OBJETS DE DÉPART (pour voir le merge)
-    spawnObject(0, 0, createObject("PCS01", 1));
-    spawnObject(1, 0, createObject("PCS01", 1));
-    spawnObject(2, 0, createObject("JOKER", 0));
-}
-
-/* ==========================================================
-   OBJETS
-========================================================== */
-
-function createObject(id, level) {
-    return {
-        id,
-        level,
-        image: id + ".png"
-    };
-}
-
-function isNonFusionable(obj) {
-    return NON_FUSIONABLE_PREFIX.some(p => obj.id.startsWith(p));
-}
-
-/* ==========================================================
-   AFFICHAGE
-========================================================== */
-
-function renderObject(obj) {
-    const div = document.createElement("div");
-    div.className = "item";
-    div.dataset.id = obj.id;
-    div.dataset.level = obj.level;
-
+function createImg(id) {
     const img = document.createElement("img");
-    img.src = getIconPath(obj.image);
+    img.src = getIconPath(id);
     img.draggable = false;
-
-    showErrorImage(img, obj.image);
-
-    div.appendChild(img);
-    return div;
+    img.onerror = () => {
+        showMessage("❌ Image manquante : " + img.src);
+        img.src = "icons/Warning.png";
+    };
+    return img;
 }
 
-/* ==========================================================
-   PLATEAU
-========================================================== */
+/* ===============================
+   OBJET JEU
+================================ */
 
-function spawnObject(x, y, obj) {
-    const index = y * GRID_SIZE + x;
-    const cell = board.children[index];
-    if (!cell || cell.firstChild) return;
-
-    grid[y][x] = obj;
-    cell.appendChild(renderObject(obj));
+class GameObject {
+    constructor({ id, level = 1, locked = false, producer = false, energyCost = 0, maxUse = null }) {
+        this.id = id;
+        this.level = level;
+        this.locked = locked;
+        this.producer = producer;
+        this.energyCost = energyCost;
+        this.usesLeft = maxUse;
+        this.cooldownEnd = 0;
+    }
 }
 
-function clearCell(cell) {
-    const x = +cell.dataset.x;
-    const y = +cell.dataset.y;
-    grid[y][x] = null;
-    cell.innerHTML = "";
-}
-
-/* ==========================================================
+/* ===============================
    MERGE
-========================================================== */
+================================ */
 
 function canMerge(a, b) {
     if (!a || !b) return false;
 
-    // Joker
-    if (a.id === JOKER_ID || b.id === JOKER_ID) {
-        if (isNonFusionable(a) || isNonFusionable(b)) return false;
-        return true;
+    // joker
+    if (a.id === "JOKER" || b.id === "JOKER") {
+        return !isChest(a) && !isChest(b);
     }
 
-    if (isNonFusionable(a) || isNonFusionable(b)) return false;
+    if (a.id !== b.id) return false;
+    if (a.level !== b.level) return false;
 
-    return a.id === b.id && a.level === b.level;
+    return true;
 }
 
-function merge(cellA, cellB) {
-    const ax = +cellA.dataset.x;
-    const ay = +cellA.dataset.y;
-    const bx = +cellB.dataset.x;
-    const by = +cellB.dataset.y;
-
-    const a = grid[ay][ax];
-    const b = grid[by][bx];
-
-    if (!canMerge(a, b)) return;
-
-    const base = a.id === JOKER_ID ? b : a;
-    const newObj = createObject(base.id, base.level + 1);
-
-    clearCell(cellA);
-    clearCell(cellB);
-    spawnObject(ax, ay, newObj);
+function isChest(obj) {
+    return NON_FUSIONABLE_PREFIX.some(p => obj.id.startsWith(p));
 }
 
-/* ==========================================================
-   INTERACTIONS
-========================================================== */
-
-function onCellClick(cell) {
-    if (!cell.firstChild) {
-        selectedCell = null;
-        return;
-    }
-
-    if (!selectedCell) {
-        selectedCell = cell;
-        cell.classList.add("selected");
-        return;
-    }
-
-    if (selectedCell === cell) {
-        selectedCell.classList.remove("selected");
-        selectedCell = null;
-        return;
-    }
-
-    selectedCell.classList.remove("selected");
-    merge(selectedCell, cell);
-    selectedCell = null;
+function mergeObjects(a, b) {
+    return new GameObject({
+        id: a.id,
+        level: a.level + 1,
+        producer: a.producer,
+        energyCost: a.energyCost
+    });
 }
 
-/* ==========================================================
-   LANCEMENT
-========================================================== */
+/* ===============================
+   ÉNERGIE
+================================ */
 
-initGrid();
+let energy = 50;
+let lastEnergyTick = Date.now();
+
+function regenEnergy() {
+    const now = Date.now();
+    const gain = Math.floor((now - lastEnergyTick) / ENERGY_REGEN_TIME);
+    if (gain > 0) {
+        energy = Math.min(ENERGY_MAX, energy + gain);
+        lastEnergyTick += gain * ENERGY_REGEN_TIME;
+        updateEnergyUI();
+    }
+}
+
+/* ===============================
+   PRODUCTEURS
+================================ */
+
+function useProducer(cell, boost = 1) {
+    const obj = cell.obj;
+    if (!obj.producer) return;
+
+    const cost = obj.energyCost * boost;
+    if (obj.energyCost > 0 && energy < cost) return;
+
+    energy -= cost;
+    updateEnergyUI();
+
+    const levelBonus = boost === 2 ? 1 : boost === 4 ? 2 : 0;
+
+    const produced = new GameObject({
+        id: obj.id,
+        level: obj.level + levelBonus
+    });
+
+    placeInGrid(produced);
+
+    if (obj.usesLeft !== null) {
+        obj.usesLeft--;
+        if (obj.usesLeft <= 0) removeObject(cell);
+    }
+}
+
+/* ===============================
+   COFFRE ÉNERGIE (CEN1)
+================================ */
+
+function openEnergyChest(cell) {
+    const chest = cell.obj;
+    for (let i = 0; i < 10; i++) {
+        const lvl = Math.floor(Math.random() * 3) + 1;
+        const val = ENERGY_VALUES[lvl - 1];
+        placeInGrid(new GameObject({ id: "ENERGY", level: lvl, value: val }));
+    }
+    removeObject(cell);
+}
+
+/* ===============================
+   COMMANDES
+================================ */
+
+const PEOPLE = [
+    "camille.png",
+    "pripri farceur.png",
+    "pripri gourmand.png",
+    "dixo.png",
+    "maman pripri.png",
+    "papa pripri.png",
+    "pripri du bout du monde.png",
+    "plancequot.png",
+    "pripri inteligent.png",
+    "djixy.png"
+];
+
+function generateCommands(playerLevel) {
+    const count = Math.floor(Math.random() * (COMMAND_MAX - COMMAND_MIN + 1)) + COMMAND_MIN;
+    const container = document.querySelector(".await-command");
+    container.innerHTML = "";
+
+    for (let i = 0; i < count; i++) {
+        const div = document.createElement("div");
+        div.className = "command";
+
+        const pic = document.createElement("div");
+        pic.className = "command-picture";
+        const img = document.createElement("img");
+        img.src = `icons/${PEOPLE[Math.floor(Math.random() * PEOPLE.length)]}`;
+        pic.appendChild(img);
+
+        const reward = document.createElement("div");
+        reward.className = "reward";
+        reward.innerHTML = `<div>+${30 + playerLevel * 5}🪙</div>`;
+
+        div.appendChild(pic);
+        div.appendChild(reward);
+        container.appendChild(div);
+    }
+}
+
+/* ===============================
+   GRILLE
+================================ */
+
+const grid = document.querySelectorAll("#grid th");
+
+function placeInGrid(obj) {
+    for (const cell of grid) {
+        if (!cell.obj) {
+            cell.obj = obj;
+            cell.innerHTML = "";
+            cell.appendChild(createImg(obj.id));
+            return true;
+        }
+    }
+    return false;
+}
+
+function removeObject(cell) {
+    cell.obj = null;
+    cell.innerHTML = "";
+}
+
+/* ===============================
+   UI
+================================ */
+
+function updateEnergyUI() {
+    const e = document.querySelector(".energy");
+    if (e) e.textContent = energy;
+}
+
+/* ===============================
+   EVENTS
+================================ */
+
+let selected = null;
+
+grid.forEach(cell => {
+    cell.addEventListener("click", () => {
+        selected = cell;
+    });
+
+    cell.addEventListener("dblclick", () => {
+        if (!cell.obj) return;
+
+        if (cell.obj.id === "CEN1") {
+            openEnergyChest(cell);
+        } else if (cell.obj.producer && !cell.obj.locked) {
+            useProducer(cell, getBoostValue());
+        }
+    });
+});
+
+/* ===============================
+   BOOST
+================================ */
+
+function getBoostValue() {
+    const sel = document.getElementById("powerEnergy");
+    if (!sel) return 1;
+    if (sel.value === "2x") return 2;
+    if (sel.value === "4x") return 4;
+    return 1;
+}
+
+/* ===============================
+   LOOP
+================================ */
+
+setInterval(() => {
+    regenEnergy();
+}, 1000);

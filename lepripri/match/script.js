@@ -1,12 +1,214 @@
-/* =====================================================
-   LE PRIPRI – MATCH GAME (JS FINAL AVANT PLAY STORE)
-   Version web (GitHub Pages) -> offline-ready
-   Auteur : Camille
-===================================================== */
+/* ============================================================
+   CONSTANTES
+============================================================ */
 
-/* ===============================
-   MESSAGE ERREUR (FOURNI)
-================================ */
+// Énergie
+const ENERGY_LEVELS = { 1:2, 2:5, 3:15, 4:40, 5:100 };
+const ENERGY_MAX_LEVEL = 5;
+
+// Coffres / non fusionnables
+const CHEST_IDS = ["CFR1","CFR2","CFR3","CFR4","CFR5","CFR6","CFR7","CEN1"];
+
+// Joker
+const JOKER_ID = "JOKER";
+
+// Player
+const player = {
+    energy: 0,
+    energyMax: 100,
+    money: 0,
+    level: 1
+};
+
+/* ============================================================
+   OUTILS
+============================================================ */
+
+function rand(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function now() {
+    return Date.now();
+}
+
+function isChest(obj) {
+    return CHEST_IDS.includes(obj.id);
+}
+
+/* ============================================================
+   OBJET DE JEU
+============================================================ */
+
+class GameObject {
+    constructor(data = {}) {
+        this.id = data.id;
+        this.level = data.level ?? 1;
+        this.filled = true;
+        this.locked = data.locked ?? false;
+
+        // production
+        this.cooldown = data.cooldown ?? 0;
+        this.cooldownEnd = 0;
+
+        // énergie / consommation
+        this.useEnergy = data.useEnergy ?? false;
+        this.energyCost = data.energyCost ?? 0;
+
+        // consommation d’objet
+        this.usesLeft = data.usesLeft ?? null;
+        this.maxUses = data.maxUses ?? null;
+
+        // production
+        this.product = data.product ?? null;
+    }
+}
+
+/* ============================================================
+   SPAWN / REMOVE
+============================================================ */
+
+function spawnObject(id, level = 1) {
+    console.log("SPAWN:", id, level);
+    // ici insertion grille / inventaire
+}
+
+function removeObject(obj) {
+    console.log("REMOVE:", obj.id, obj.level);
+}
+
+/* ============================================================
+   FUSION
+============================================================ */
+
+function tryMerge(a, b) {
+
+    // ❌ coffres jamais fusionnables
+    if (isChest(a) || isChest(b)) return false;
+
+    // 🃏 JOKER
+    if (a.id === JOKER_ID || b.id === JOKER_ID) {
+        const target = a.id === JOKER_ID ? b : a;
+        if (target.level >= getMaxLevel(target.id)) return false;
+
+        removeObject(a);
+        removeObject(b);
+        spawnObject(target.id, target.level + 1);
+        return true;
+    }
+
+    // ⚡ énergie
+    if (a.id === "ENERGY" && b.id === "ENERGY") {
+        if (a.level !== b.level || a.level >= ENERGY_MAX_LEVEL) return false;
+        removeObject(a);
+        removeObject(b);
+        spawnObject("ENERGY", a.level + 1);
+        return true;
+    }
+
+    // 🔁 fusion classique
+    if (a.id !== b.id || a.level !== b.level) return false;
+    if (a.level >= getMaxLevel(a.id)) return false;
+
+    removeObject(a);
+    removeObject(b);
+    spawnObject(a.id, a.level + 1);
+    return true;
+}
+
+function getMaxLevel(id) {
+    if (id === "ENERGY") return ENERGY_MAX_LEVEL;
+    return 5; // valeur par défaut (modifiable)
+}
+
+/* ============================================================
+   PRODUCTION
+============================================================ */
+
+function canProduce(obj) {
+    if (obj.locked) return false;
+    if (obj.cooldownEnd > now()) return false;
+    if (obj.useEnergy && player.energy < obj.energyCost) return false;
+    if (obj.usesLeft !== null && obj.usesLeft <= 0) return false;
+    return true;
+}
+
+function produce(obj) {
+    if (!canProduce(obj)) return;
+
+    // énergie
+    if (obj.useEnergy) {
+        player.energy -= obj.energyCost;
+    }
+
+    // usage
+    if (obj.usesLeft !== null) {
+        obj.usesLeft--;
+    }
+
+    // production énergie (CEN1)
+    if (obj.id === "CEN1") {
+        const lvl = rand(1, 3);
+        spawnObject("ENERGY", lvl);
+    }
+
+    // autres producteurs
+    if (obj.product) {
+        spawnObject(obj.product.id, obj.product.level ?? 1);
+    }
+
+    // cooldown
+    if (obj.cooldown > 0) {
+        obj.cooldownEnd = now() + obj.cooldown;
+    }
+
+    // destruction
+    if (obj.usesLeft === 0) {
+        removeObject(obj);
+    }
+}
+
+/* ============================================================
+   RÉCUPÉRATION ÉNERGIE
+============================================================ */
+
+function collectEnergy(obj) {
+    if (obj.id !== "ENERGY") return;
+    const value = ENERGY_LEVELS[obj.level] ?? 0;
+    player.energy = Math.min(player.energy + value, player.energyMax);
+    removeObject(obj);
+}
+
+/* ============================================================
+   COMMANDES (STRUCTURE)
+============================================================ */
+
+class Command {
+    constructor(data) {
+        this.person = data.person;
+        this.need = data.need; // {id, level}
+        this.reward = data.reward; // {money, energy, objects}
+        this.progress = 0;
+    }
+}
+
+const activeCommands = [];
+
+function completeCommand(cmd) {
+    player.money += cmd.reward.money ?? 0;
+    player.energy = Math.min(player.energy + (cmd.reward.energy ?? 0), player.energyMax);
+
+    if (cmd.reward.objects) {
+        cmd.reward.objects.forEach(o => spawnObject(o.id, o.level));
+    }
+
+    player.level += cmd.reward.levelGain ?? 0;
+}
+
+/* ============================================================
+   MESSAGE ERREUR IMAGE OFFLINE
+============================================================ */
+
 function showMessage(data, OPTIONALendScript) {
     var closer = () => {
         setTimeout(() => {
@@ -14,152 +216,18 @@ function showMessage(data, OPTIONALendScript) {
             dialog.remove();
             if (OPTIONALendScript) OPTIONALendScript();
         }, 350);
-    }, dialog = document.createElement("dialog");
+    };
 
-    dialog.innerHTML = '<img src="https://lepripri.github.io/lepripri/icons/Warning.png">' + data;
+    var dialog = document.createElement("dialog");
+    dialog.innerHTML = '<img src="icons/Warning.png">' + data;
     dialog.className = "message";
 
     var Opener = () => {
-        if (document.querySelector('dialog.message')) return null;
+        if (document.querySelector("dialog.message")) return;
         document.body.appendChild(dialog);
         dialog.showModal();
         dialog.addEventListener("click", closer);
-        dialog.addEventListener("keydown", closer);
-        document.addEventListener("keydown", closer);
         setTimeout(closer, 2000);
-        return dialog;
     };
-    return Opener();
+    Opener();
 }
-
-/* ===============================
-   NOM DES OBJETS
-================================ */
-const OBJECT_NAMES = {
-    CPP1: "pripri simple",
-    CPP2: "pripri double",
-    CPP3: "pripri triple",
-    CPP4: "pripri quadruple",
-    CPP5: "pripri triple RJ45",
-    CPP6: "pripri triple USB + RJ45",
-    CPP7: "pripri 7 USB",
-    CPP8: "⚡ maman pripri",
-    CPP9: "⚡ pripri extraterrestre magique",
-
-    RDP1: "boîte vide",
-    RDP2: "⚡ boîte à un pripri",
-    RDP3: "⚡ boîte un peu pleine",
-    RDP4: "⚡ boîte bien pleine",
-    RDP5: "⚡ boîte pleine",
-    RDP6: "⚡ ville de priprix"
-};
-
-/* ===============================
-   IMAGE STRICTE (OFFLINE)
-================================ */
-let IMAGE_ERROR_SHOWN = false;
-
-function loadImageStrict(id) {
-    return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.src = `icons/${id}.png`;
-        img.onload = () => resolve(img);
-        img.onerror = () => {
-            if (!IMAGE_ERROR_SHOWN) {
-                IMAGE_ERROR_SHOWN = true;
-                showMessage(`
-                    <b>Erreur critique</b><br><br>
-                    Image manquante : <code>${id}.png</code><br>
-                    L'application fonctionne hors ligne.<br><br>
-                    Vérifie les assets avant Play Store.
-                `);
-            }
-            reject(id);
-        };
-    });
-}
-
-/* ===============================
-   STRUCTURE OBJET
-================================ */
-class MatchObject {
-    constructor(data) {
-        this.filled = data.filled;
-        this.id = data.id;
-        this.locked = data.locked || false;
-        this.cooldownEnd = data.cooldownEnd || 0;
-        this.boxed = data.boxed || { trued: false, level: 0 };
-        this.product = data.product || { items: [], energyConsomation: false };
-    }
-}
-
-/* ===============================
-   DONNÉES INITIALES
-================================ */
-const GAME_DATA = {
-    energy: { value: 100, max: 100 },
-    money: 0,
-    level: 1,
-    grid: [
-        { filled: true, id: "RDP3", locked: true, cooldownEnd: Date.now() + 300000 },
-        { filled: true, id: "CPP2", locked: true, cooldownEnd: Date.now() + 90000 }
-    ]
-};
-
-/* ===============================
-   RENDU GRILLE
-================================ */
-async function renderGrid() {
-    const cells = document.querySelectorAll("#grid th");
-    GAME_DATA.grid.forEach(async (data, i) => {
-        if (!data.filled || !cells[i]) return;
-        const obj = new MatchObject(data);
-        try {
-            const img = await loadImageStrict(obj.id);
-            img.draggable = false;
-            img.title = OBJECT_NAMES[obj.id] || obj.id;
-            cells[i].innerHTML = "";
-            cells[i].appendChild(img);
-            cells[i].matchData = obj;
-            cells[i].setAttribute("completed", "");
-            if (obj.locked) cells[i].setAttribute("disabled", "");
-        } catch (e) {}
-    });
-}
-
-/* ===============================
-   BUBBLE / OPTIONS
-================================ */
-const bubble = document.querySelector(".textBuBule");
-const options = document.getElementById("options");
-let selectedCell = null;
-
-function updateBubble() {
-    if (!selectedCell) {
-        bubble.setAttribute("no-selection", "");
-        return;
-    }
-    bubble.removeAttribute("no-selection");
-}
-
-/* ===============================
-   SÉLECTION CELLULE
-================================ */
-document.querySelectorAll("#grid th").forEach(cell => {
-    cell.addEventListener("click", () => {
-        selectedCell = cell.matchData || null;
-        updateBubble();
-    });
-});
-
-/* ===============================
-   LANCEMENT
-================================ */
-window.addEventListener("load", () => {
-    renderGrid();
-});
-
-/* =====================================================
-   FIN – prêt pour GitHub Pages
-   (offline strict avant Play Store)
-===================================================== */

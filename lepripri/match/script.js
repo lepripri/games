@@ -1,4 +1,68 @@
 /* ===============================
+   TEST UNIQUE DES ICÔNES
+================================ */
+
+const ICONS_TO_CHECK = [
+    // Pripri
+    "CPP1.png","CPP2.png","CPP3.png","CPP4.png","CPP5.png",
+    "CPP6.png","CPP7.png","CPP8.png","CPP9.png",
+
+    // Producteurs / boîtes
+    "RDP1.png","RDP2.png","RDP3.png","RDP4.png","RDP5.png","RDP6.png",
+
+    // Énergie
+    "ENR1.png","ENR2.png","ENR3.png","ENR4.png","ENR5.png",
+
+    // Pièces
+    "PCS1.png","PCS2.png","PCS3.png","PCS4.png","PCS5.png",
+
+    // Coffres énergie
+    "CEN1.png",
+
+    // Outils
+    "TBC1.png","TBC2.png",
+
+    // UI
+    "Warning.png"
+];
+
+let ICON_CHECK_DONE = false;
+
+function checkIconsOnce() {
+    if (ICON_CHECK_DONE) return;
+    ICON_CHECK_DONE = true;
+
+    let missing = [];
+    let checked = 0;
+
+    ICONS_TO_CHECK.forEach(name => {
+        const img = new Image();
+        img.onload = () => checked++;
+        img.onerror = () => {
+            missing.push(name);
+            checked++;
+        };
+        img.src = "icons/" + name;
+    });
+
+    const wait = setInterval(() => {
+        if (checked >= ICONS_TO_CHECK.length) {
+            clearInterval(wait);
+
+            if (missing.length > 0) {
+                showMessage(
+                    "⚠️ Icônes manquantes :<br>" +
+                    missing.join("<br>")
+                );
+            }
+        }
+    }, 50);
+}
+
+// 🔥 appel UNIQUE
+checkIconsOnce();
+
+/* ===============================
    MESSAGE SYSTÈME (ANTI-SPAM)
 ================================ */
 

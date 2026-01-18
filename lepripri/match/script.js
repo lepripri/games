@@ -1,350 +1,192 @@
-/* ============================================================
+"use strict";
+
+/* ==========================================================
    CONSTANTES
-============================================================ */
+========================================================== */
 
-// Énergie
-const ENERGY_LEVELS = { 1:2, 2:5, 3:15, 4:40, 5:100 };
-const ENERGY_MAX_LEVEL = 5;
-
-// Coffres / non fusionnables
-const CHEST_IDS = ["CFR1","CFR2","CFR3","CFR4","CFR5","CFR6","CFR7","CEN1"];
-const NON_FUSIONABLE_PREFIX = [
-    "CFR",   // coffres classiques
-    "CEN"    // coffres énergie
-];
-// Joker
+const GRID_SIZE = 8;
+const ICON_PATH = "icons/";
+const NON_FUSIONABLE_PREFIX = ["CEN", "CHEST", "COFFRE"]; // FIX ERREUR
 const JOKER_ID = "JOKER";
 
-// Player
-const player = {
-    energy: 0,
-    energyMax: 100,
-    money: 0,
-    level: 1
-};
-
-/* ============================================================
+/* ==========================================================
    OUTILS
-============================================================ */
+========================================================== */
 
-function rand(min, max) {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
+function getIconPath(file) {
+    if (!file) return ICON_PATH + "Warning.png";
+    if (file.startsWith(ICON_PATH)) return file;
+    return ICON_PATH + file;
 }
 
-function now() {
-    return Date.now();
+function showErrorImage(img, name) {
+    img.onerror = () => {
+        showMessage("Image manquante : " + name);
+        img.src = ICON_PATH + "Warning.png";
+    };
 }
 
-function isChest(obj) {
-    return CHEST_IDS.includes(obj.id);
-}
+/* ==========================================================
+   ÉTAT DU JEU
+========================================================== */
 
-/* ============================================================
-   OBJET DE JEU
-============================================================ */
+let selectedCell = null;
 
-class GameObject {
-    constructor(data = {}) {
-        this.id = data.id;
-        this.level = data.level ?? 1;
-        this.filled = true;
-        this.locked = data.locked ?? false;
+const grid = [];
+const board = document.getElementById("grid");
 
-        // production
-        this.cooldown = data.cooldown ?? 0;
-        this.cooldownEnd = 0;
+/* ==========================================================
+   INITIALISATION
+========================================================== */
 
-        // énergie / consommation
-        this.useEnergy = data.useEnergy ?? false;
-        this.energyCost = data.energyCost ?? 0;
+function initGrid() {
+    board.innerHTML = "";
+    grid.length = 0;
 
-        // consommation d’objet
-        this.usesLeft = data.usesLeft ?? null;
-        this.maxUses = data.maxUses ?? null;
+    for (let y = 0; y < GRID_SIZE; y++) {
+        const row = [];
+        for (let x = 0; x < GRID_SIZE; x++) {
+            const cell = document.createElement("div");
+            cell.className = "cell";
+            cell.dataset.x = x;
+            cell.dataset.y = y;
 
-        // production
-        this.product = data.product ?? null;
+            cell.addEventListener("click", () => onCellClick(cell));
+
+            board.appendChild(cell);
+            row.push(null);
+        }
+        grid.push(row);
     }
+
+    // TEST OBJETS DE DÉPART (pour voir le merge)
+    spawnObject(0, 0, createObject("PCS01", 1));
+    spawnObject(1, 0, createObject("PCS01", 1));
+    spawnObject(2, 0, createObject("JOKER", 0));
 }
 
-/* ============================================================
-   SPAWN / REMOVE
-============================================================ */
-const gridCells = document.querySelectorAll("#grid th");
+/* ==========================================================
+   OBJETS
+========================================================== */
 
-function getEmptyCell() {
-    return [...gridCells].find(c => !c.hasAttribute("completed"));
+function createObject(id, level) {
+    return {
+        id,
+        level,
+        image: id + ".png"
+    };
 }
 
-function spawnObject(id, level = 1, forcedCell = null) {
-    const cell = forcedCell || getEmptyCell();
-    if (!cell) {
-        showMessage("Plateau plein");
-        return;
-    }
+function isNonFusionable(obj) {
+    return NON_FUSIONABLE_PREFIX.some(p => obj.id.startsWith(p));
+}
+
+/* ==========================================================
+   AFFICHAGE
+========================================================== */
+
+function renderObject(obj) {
+    const div = document.createElement("div");
+    div.className = "item";
+    div.dataset.id = obj.id;
+    div.dataset.level = obj.level;
 
     const img = document.createElement("img");
-    img.src = `icons/${id}.png`;
-    img.draggable = true;
-    img.dataset.id = id;
-    img.dataset.level = level;
+    img.src = getIconPath(obj.image);
+    img.draggable = false;
 
-    img.onerror = () => {
-        showMessage(`Image manquante : ${id}.png`);
-    };
+    showErrorImage(img, obj.image);
 
-    cell.appendChild(img);
-    cell.setAttribute("completed", "");
-
-    enableDrag(img);
+    div.appendChild(img);
+    return div;
 }
 
-function removeObject(obj) {
-    console.log("REMOVE:", obj.id, obj.level);
+/* ==========================================================
+   PLATEAU
+========================================================== */
+
+function spawnObject(x, y, obj) {
+    const index = y * GRID_SIZE + x;
+    const cell = board.children[index];
+    if (!cell || cell.firstChild) return;
+
+    grid[y][x] = obj;
+    cell.appendChild(renderObject(obj));
 }
 
-/* ============================================================
-   FUSION
-============================================================ */
-
-function tryMerge(a, b) {
-
-    // ❌ coffres jamais fusionnables
-    if (isChest(a) || isChest(b)) return false;
-
-    // 🃏 JOKER
-    if (a.id === JOKER_ID || b.id === JOKER_ID) {
-        const target = a.id === JOKER_ID ? b : a;
-        if (target.level >= getMaxLevel(target.id)) return false;
-
-        removeObject(a);
-        removeObject(b);
-        spawnObject(target.id, target.level + 1);
-        return true;
-    }
-
-    // ⚡ énergie
-    if (a.id === "ENERGY" && b.id === "ENERGY") {
-        if (a.level !== b.level || a.level >= ENERGY_MAX_LEVEL) return false;
-        removeObject(a);
-        removeObject(b);
-        spawnObject("ENERGY", a.level + 1);
-        return true;
-    }
-
-    // 🔁 fusion classique
-    if (a.id !== b.id || a.level !== b.level) return false;
-    if (a.level >= getMaxLevel(a.id)) return false;
-
-    removeObject(a);
-    removeObject(b);
-    spawnObject(a.id, a.level + 1);
-    return true;
+function clearCell(cell) {
+    const x = +cell.dataset.x;
+    const y = +cell.dataset.y;
+    grid[y][x] = null;
+    cell.innerHTML = "";
 }
 
-function getMaxLevel(id) {
-    if (id === "ENERGY") return ENERGY_MAX_LEVEL;
-    return 5; // valeur par défaut (modifiable)
-}
-
-/* ============================================================
-   PRODUCTION
-============================================================ */
-
-function canProduce(obj) {
-    if (obj.locked) return false;
-    if (obj.cooldownEnd > now()) return false;
-    if (obj.useEnergy && player.energy < obj.energyCost) return false;
-    if (obj.usesLeft !== null && obj.usesLeft <= 0) return false;
-    return true;
-}
-
-function produce(obj) {
-    if (!canProduce(obj)) return;
-
-    // énergie
-    if (obj.useEnergy) {
-        player.energy -= obj.energyCost;
-    }
-
-    // usage
-    if (obj.usesLeft !== null) {
-        obj.usesLeft--;
-    }
-
-    // production énergie (CEN1)
-    if (obj.id === "CEN1") {
-        const lvl = rand(1, 3);
-        spawnObject("ENERGY", lvl);
-    }
-
-    // autres producteurs
-    if (obj.product) {
-        spawnObject(obj.product.id, obj.product.level ?? 1);
-    }
-
-    // cooldown
-    if (obj.cooldown > 0) {
-        obj.cooldownEnd = now() + obj.cooldown;
-    }
-
-    // destruction
-    if (obj.usesLeft === 0) {
-        removeObject(obj);
-    }
-}
-
-/* ============================================================
-   RÉCUPÉRATION ÉNERGIE
-============================================================ */
-
-function collectEnergy(obj) {
-    if (obj.id !== "ENERGY") return;
-    const value = ENERGY_LEVELS[obj.level] ?? 0;
-    player.energy = Math.min(player.energy + value, player.energyMax);
-    removeObject(obj);
-}
-
-/* ============================================================
-   COMMANDES (STRUCTURE)
-============================================================ */
-
-class Command {
-    constructor(data) {
-        this.person = data.person;
-        this.need = data.need; // {id, level}
-        this.reward = data.reward; // {money, energy, objects}
-        this.progress = 0;
-    }
-}
-
-const activeCommands = [];
-
-function completeCommand(cmd) {
-    player.money += cmd.reward.money ?? 0;
-    player.energy = Math.min(player.energy + (cmd.reward.energy ?? 0), player.energyMax);
-
-    if (cmd.reward.objects) {
-        cmd.reward.objects.forEach(o => spawnObject(o.id, o.level));
-    }
-
-    player.level += cmd.reward.levelGain ?? 0;
-}
-
-/* ============================================================
-   MESSAGE ERREUR IMAGE OFFLINE
-============================================================ */
-
-function showMessage(data, OPTIONALendScript) {
-    var closer = () => {
-        setTimeout(() => {
-            dialog.close();
-            dialog.remove();
-            if (OPTIONALendScript) OPTIONALendScript();
-        }, 350);
-    };
-
-    var dialog = document.createElement("dialog");
-    dialog.innerHTML = '<img src="icons/Warning.png">' + data;
-    dialog.className = "message";
-
-    var Opener = () => {
-        if (document.querySelector("dialog.message")) return;
-        document.body.appendChild(dialog);
-        dialog.showModal();
-        dialog.addEventListener("click", closer);
-        setTimeout(closer, 2000);
-    };
-    Opener();
-}
-
-window.addEventListener("load", () => {
-
-    // Producteur de départ
-    spawnObject("RDP1", 1);
-
-    // Objets de départ
-    spawnObject("CPP1", 1);
-    spawnObject("CPP1", 1);
-
-    // Énergie initiale
-    spawnObject("ENERGY", 1);
-    spawnObject("ENERGY", 1);
-
-});
+/* ==========================================================
+   MERGE
+========================================================== */
 
 function canMerge(a, b) {
     if (!a || !b) return false;
 
-    const idA = a.dataset.id;
-    const idB = b.dataset.id;
-
-    // coffres interdits
-    if (NON_FUSIONABLE_PREFIX.some(p => idA.startsWith(p) || idB.startsWith(p)))
-        return false;
-
-    // joker
-    if (idA === JOKER_ID || idB === JOKER_ID)
+    // Joker
+    if (a.id === JOKER_ID || b.id === JOKER_ID) {
+        if (isNonFusionable(a) || isNonFusionable(b)) return false;
         return true;
+    }
 
-    return (
-        idA === idB &&
-        a.dataset.level === b.dataset.level
-    );
-}
-function mergeObjects(a, b, targetCell) {
-    const idA = a.dataset.id;
-    const idB = b.dataset.id;
+    if (isNonFusionable(a) || isNonFusionable(b)) return false;
 
-    let baseId = idA === JOKER_ID ? idB : idA;
-    let newLevel = Number(a.dataset.level) + 1;
-
-    // suppression
-    a.remove();
-    b.remove();
-
-    targetCell.innerHTML = "";
-    targetCell.removeAttribute("completed");
-
-    spawnObject(baseId, newLevel, targetCell);
-}
-let draggedImg = null;
-
-function enableDrag(img) {
-    img.addEventListener("dragstart", e => {
-        draggedImg = img;
-        setTimeout(() => img.style.opacity = 0.3, 0);
-    });
-
-    img.addEventListener("dragend", () => {
-        draggedImg = null;
-        img.style.opacity = "";
-    });
+    return a.id === b.id && a.level === b.level;
 }
 
-document.querySelectorAll("#grid th").forEach(cell => {
+function merge(cellA, cellB) {
+    const ax = +cellA.dataset.x;
+    const ay = +cellA.dataset.y;
+    const bx = +cellB.dataset.x;
+    const by = +cellB.dataset.y;
 
-    cell.addEventListener("dragover", e => e.preventDefault());
+    const a = grid[ay][ax];
+    const b = grid[by][bx];
 
-    cell.addEventListener("drop", e => {
-        e.preventDefault();
-        if (!draggedImg) return;
+    if (!canMerge(a, b)) return;
 
-        const targetImg = cell.querySelector("img");
+    const base = a.id === JOKER_ID ? b : a;
+    const newObj = createObject(base.id, base.level + 1);
 
-        // case vide → déplacement
-        if (!targetImg) {
-            draggedImg.parentElement.removeAttribute("completed");
-            cell.appendChild(draggedImg);
-            cell.setAttribute("completed", "");
-            return;
-        }
+    clearCell(cellA);
+    clearCell(cellB);
+    spawnObject(ax, ay, newObj);
+}
 
-        // tentative fusion
-        if (canMerge(draggedImg, targetImg)) {
-            mergeObjects(draggedImg, targetImg, cell);
-        } else {
-            showMessage("Fusion impossible");
-        }
-    });
-});
+/* ==========================================================
+   INTERACTIONS
+========================================================== */
+
+function onCellClick(cell) {
+    if (!cell.firstChild) {
+        selectedCell = null;
+        return;
+    }
+
+    if (!selectedCell) {
+        selectedCell = cell;
+        cell.classList.add("selected");
+        return;
+    }
+
+    if (selectedCell === cell) {
+        selectedCell.classList.remove("selected");
+        selectedCell = null;
+        return;
+    }
+
+    selectedCell.classList.remove("selected");
+    merge(selectedCell, cell);
+    selectedCell = null;
+}
+
+/* ==========================================================
+   LANCEMENT
+========================================================== */
+
+initGrid();

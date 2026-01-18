@@ -67,10 +67,32 @@ class GameObject {
 /* ============================================================
    SPAWN / REMOVE
 ============================================================ */
+const gridCells = document.querySelectorAll("#grid th");
+
+function getEmptyCell() {
+    return [...gridCells].find(c => !c.hasAttribute("completed"));
+}
 
 function spawnObject(id, level = 1) {
-    console.log("SPAWN:", id, level);
-    // ici insertion grille / inventaire
+    const cell = getEmptyCell();
+    if (!cell) {
+        showMessage("Plus de place sur le plateau");
+        return;
+    }
+
+    const img = document.createElement("img");
+    img.src = `icons/${id}.png`;
+    img.draggable = true;
+
+    img.onerror = () => {
+        showMessage(`Image manquante : ${id}.png`);
+    };
+
+    img.dataset.id = id;
+    img.dataset.level = level;
+
+    cell.appendChild(img);
+    cell.setAttribute("completed", "");
 }
 
 function removeObject(obj) {
@@ -231,3 +253,18 @@ function showMessage(data, OPTIONALendScript) {
     };
     Opener();
 }
+
+window.addEventListener("load", () => {
+
+    // Producteur de départ
+    spawnObject("RDP1", 1);
+
+    // Objets de départ
+    spawnObject("CPP1", 1);
+    spawnObject("CPP1", 1);
+
+    // Énergie initiale
+    spawnObject("ENERGY", 1);
+    spawnObject("ENERGY", 1);
+
+});

@@ -61,6 +61,14 @@ const OBJECT_NAMES = {
     DFU3: "💎 7 fonctionnalités payantes",
     DFU4: "💎 15 fonctionnalités payantes",
     DFU5: "💎 32 fonctionnalités payantes",
+
+    CFR1: "sachet bleu",
+    CFR2: "sachet violet",
+    CFR3: "boite transparente",
+    CFR4: "petit coffret",
+    CFR5: "grand coffret",
+    CFR6: "grand coffre",
+    CFR7: "coffre XXL"
 };
 
 /* ===============================
@@ -156,7 +164,7 @@ gridCells.forEach(cell => {
     });
 
     cell.addEventListener("dragover", e => {
-        if (!cell.matchObject) e.preventDefault();
+        e.preventDefault();
     });
 
     cell.addEventListener("drop", e => {

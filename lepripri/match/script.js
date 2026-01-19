@@ -44,17 +44,23 @@ const OBJECT_NAMES = {
     RDP5: "⚡ boîte pleine",
     RDP6: "⚡ ville de priprix",
 
-    PCS1: "1 pièce",
-    PCS2: "3 pièces",
-    PCS3: "7 pièces",
-    PCS4: "15 pièces",
-    PCS5: "32 pièces",
+    PCS1: "🪙 1 pièce",
+    PCS2: "🪙 3 pièces",
+    PCS3: "🪙 7 pièces",
+    PCS4: "🪙 15 pièces",
+    PCS5: "🪙 32 pièces",
 
     ENR1: "⚡ 2 énergies",
     ENR2: "⚡ 5 énergies",
     ENR3: "⚡ 15 énergies",
     ENR4: "⚡ 40 énergies",
-    ENR5: "⚡ 100 énergies"
+    ENR5: "⚡ 100 énergies",
+
+    DFU1: "💎 1 fonctionnalité payantes",
+    DFU2: "💎 3 fonctionnalités payantes",
+    DFU3: "💎 7 fonctionnalités payantes",
+    DFU4: "💎 15 fonctionnalités payantes",
+    DFU5: "💎 32 fonctionnalités payantes",
 };
 
 /* ===============================

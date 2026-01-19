@@ -12,6 +12,18 @@ const MAX_ENERGY = 100;
 const ENERGY_REGEN_TIME = 120000; // 1 énergie / 2 min
 const NON_FUSIONABLE_PREFIX = ["CFR", "CEN"];
 const JOKER_ID = "JOKER";
+var closeEnergyAssistant = () => {};
+function openEnergyAssistant() {
+    var energyAssistant = document.body.appendChild(document.createElement('dialog'));
+    energyAssistant.innerHTML = '';
+    energyAssistant.onclose = () => {
+        energyAssistant.remove();
+    };
+    closeEnergyAssistant = () => {
+        energyAssistant.close();
+        energyAssistant.remove();
+    };
+}
 
 /* ===============================
    DONNÉES JOUEUR
@@ -68,7 +80,16 @@ const OBJECT_NAMES = {
     CFR4: "petit coffret",
     CFR5: "grand coffret",
     CFR6: "grand coffre",
-    CFR7: "coffre XXL"
+    CFR7: "coffre XXL",
+
+    BBP1: "bébé pripri",
+    BBP2: "pripri ados",
+
+    BEP1: "bébé pripri extraterrestre",
+    BEP2: "pripri extraterrestre ados",
+    BEP3: "jeune pripri extraterrestre",
+    BEP4: "pripri extraterrestre adulte",
+    BEP5: "vieux pripri extraterrestre",
 };
 
 /* ===============================
@@ -82,6 +103,9 @@ class MatchObject {
         this.cooldownEnd = 0;
     }
 }
+
+MatchObject.prototype.productionCount = 0;
+MatchObject.prototype.cooldownUntil = 0;
 
 /* ===============================
    GRILLE
@@ -229,7 +253,7 @@ gridCells.forEach(cell => {
 });
 
 /* ===============================
-   PRODUCTION (clic producteur)
+   PRODUCTION AVANCÉE
 ================================ */
 gridCells.forEach(cell => {
     cell.addEventListener("click", () => {
@@ -238,39 +262,87 @@ gridCells.forEach(cell => {
         const obj = cell.matchObject;
         const id = obj.id;
 
-        // doit être un producteur ⚡
         if (!OBJECT_NAMES[id]?.includes("⚡")) return;
 
-        // énergie insuffisante
-        if (player.energy <= 0) {
-            showMessage("⚠️ Pas assez d'énergie");
+        // cooldown
+        if (obj.cooldownUntil && Date.now() < obj.cooldownUntil) {
+            showMessage("chargement...<br>veillez patienter ou<br>dépencer de l'argent");
             return;
         }
 
-        // trouver une case libre
+        if (player.energy <= 0) {
+            openEnergyAssistant();
+            return;
+        }
+
         const emptyCell = gridCells.find(c => !c.matchObject);
         if (!emptyCell) {
-            showMessage("❌ Plateau plein");
+            showMessage("Plateau plein !");
             return;
         }
 
-        // consommer énergie
+        // énergie consommée
         player.energy--;
         document.querySelector(".energy").textContent = player.energy;
 
-        // règle de production (simple)
-        let producedId = "CPP1";
+        obj.productionCount++;
 
-        if (id.startsWith("RDP")) producedId = "CPP1";
-        if (id.startsWith("CPP")) producedId = "PCS1";
+        let producedId = null;
+        let producedLevel = 1;
+
+        /* ===== RÈGLES ===== */
+
+        // PRODUCTEUR PRINCIPAL
+        if (id.startsWith("RDP")) {
+            producedId = "CPP1";
+
+            if (obj.productionCount >= 50) {
+                obj.cooldownUntil = Date.now() + 300000; // 5 min
+                obj.productionCount = 0;
+            }
+        }
+
+        // MAMAN PRIPRI
+        if (id === "CPP8") {
+            producedId = "BBP1";
+            producedLevel = Math.random() < 0.5 ? 1 : 2;
+
+            if (obj.productionCount >= 25) {
+                cell.innerHTML = "";
+                cell.matchObject = null;
+                cell.removeAttribute("completed");
+                showMessage("💥 La maman pripri s'est désintégrée");
+                return;
+            }
+        }
+
+        // PRIPRI EXTRATERRESTRE
+        if (id === "CPP9") {
+            if (Math.random() < 0.6) {
+                producedId = "BBP1";
+                producedLevel = Math.random() < 0.5 ? 1 : 2;
+            } else {
+                producedId = "BEP1";
+                producedLevel = Math.floor(Math.random() * 5) + 1;
+            }
+
+            if (obj.productionCount >= 25) {
+                cell.innerHTML = "";
+                cell.matchObject = null;
+                cell.removeAttribute("completed");
+                showMessage("👽 Le pripri extraterrestre s'est dissous");
+                return;
+            }
+        }
+
+        if (!producedId) return;
 
         placeObject(
             emptyCell,
-            new MatchObject(producedId, 1)
+            new MatchObject(producedId, producedLevel)
         );
     });
 });
-
 /* ===============================
    ÉNERGIE AUTO
 ================================ */

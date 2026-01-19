@@ -137,7 +137,7 @@ function mergeCells(fromCell, toCell) {
     const b = toCell.querySelector("img");
     if (!canMerge(a, b)) return;
 
-    const newLevel = Number(a.dataset.level + 1) + 1;
+    const newLevel = Number(a.dataset.level) + 1;
     const id = a.dataset.id;
 
     fromCell.innerHTML = "";
@@ -170,7 +170,6 @@ gridCells.forEach(cell => {
     cell.addEventListener("drop", e => {
         e.preventDefault();
         if (!draggedCell || draggedCell === cell) return;
-
         if (cell.matchObject) {
             mergeCells(draggedCell, cell);
         } else {

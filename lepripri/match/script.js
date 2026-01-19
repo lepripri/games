@@ -229,6 +229,49 @@ gridCells.forEach(cell => {
 });
 
 /* ===============================
+   PRODUCTION (clic producteur)
+================================ */
+gridCells.forEach(cell => {
+    cell.addEventListener("click", () => {
+        if (!cell.matchObject) return;
+
+        const obj = cell.matchObject;
+        const id = obj.id;
+
+        // doit être un producteur ⚡
+        if (!OBJECT_NAMES[id]?.includes("⚡")) return;
+
+        // énergie insuffisante
+        if (player.energy <= 0) {
+            showMessage("⚠️ Pas assez d'énergie");
+            return;
+        }
+
+        // trouver une case libre
+        const emptyCell = gridCells.find(c => !c.matchObject);
+        if (!emptyCell) {
+            showMessage("❌ Plateau plein");
+            return;
+        }
+
+        // consommer énergie
+        player.energy--;
+        document.querySelector(".energy").textContent = player.energy;
+
+        // règle de production (simple)
+        let producedId = "CPP1";
+
+        if (id.startsWith("RDP")) producedId = "CPP1";
+        if (id.startsWith("CPP")) producedId = "PCS1";
+
+        placeObject(
+            emptyCell,
+            new MatchObject(producedId, 1)
+        );
+    });
+});
+
+/* ===============================
    ÉNERGIE AUTO
 ================================ */
 setInterval(() => {

@@ -235,5 +235,18 @@ document.querySelector(".money").textContent = player.money;
 document.querySelector(".energy").textContent = player.energy;
 
 /* ===============================
+   SELECTION
+================================ */
+setInterval(() => {
+    grid.querySelectorAll("img").forEach((curElement) => {
+        curElement.onclick = () => {
+            grid.querySelectorAll("img").forEach((secCurElement) => {
+                secCurElement.removeAttribute("selected");
+            });
+            curElement.setAttribute("selected", "");
+        };
+    });
+}, 10);
+/* ===============================
    FIN SCRIPT
 ================================ */

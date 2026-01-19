@@ -114,9 +114,9 @@ function placeObject(cell, obj) {
 clearGrid();
 
 // objets de départ (exemple jouable)
-placeObject(gridCells[10], new MatchObject("CPP1", 1));
-placeObject(gridCells[11], new MatchObject("CPP1", 1));
-placeObject(gridCells[12], new MatchObject("RDP2", 1));
+placeObject(gridCells[17], new MatchObject("CPP1", 1));
+placeObject(gridCells[23], new MatchObject("RDP1", 1));
+placeObject(gridCells[24], new MatchObject("RDP1", 1));
 
 /* ===============================
    FUSION
@@ -137,7 +137,7 @@ function mergeCells(fromCell, toCell) {
     const b = toCell.querySelector("img");
     if (!canMerge(a, b)) return;
 
-    const newLevel = Number(a.dataset.level) + 1;
+    const newLevel = Number(a.dataset.level + 1) + 1;
     const id = a.dataset.id;
 
     fromCell.innerHTML = "";

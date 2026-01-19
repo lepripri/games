@@ -12,10 +12,12 @@ const MAX_ENERGY = 100;
 const ENERGY_REGEN_TIME = 120000; // 1 énergie / 2 min
 const NON_FUSIONABLE_PREFIX = ["CFR", "CEN"];
 const JOKER_ID = "JOKER";
-var closeEnergyAssistant = () => {};
+var closeEnergyAssistant = () => {}, 
+nextOnEnergyAssistant = () => {},
+previewOnEnergyAssistant = () => {};
 function openEnergyAssistant() {
     var energyAssistant = document.body.appendChild(document.createElement('dialog'));
-    energyAssistant.innerHTML = '';
+    energyAssistant.innerHTML = '<div class="windowTitle">Assistant d'énergie</div><div class="content"><section><article><h1>vous n'avez plus d'énergie</h1><h3>obtenez plus d'énergies pour continuer à produire des objets</h3><h6>Dans cette assistant, vous aurais des OFFRES pour OBTENIR de l'ÉNERGIE GRATUITEMENT. Si vous n'avais pas de pièce de jeux le pripri, vous pouvez GAGNIER des PIÈCES et de l'ÉNERGIE en jouant à d'AUTRES JEUX le pripri.</h6></article></section></div><div class="buttons"><button onclick="nextOnEnergyAssistant()">suivant</button><button onclick="previewOnEnergyAssistant()" disabled="">précedant</button><button onclick="closeEnergyAssistant()">quitter l'assistant</button></div>';
     energyAssistant.onclose = () => {
         energyAssistant.remove();
     };

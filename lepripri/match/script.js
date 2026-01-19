@@ -96,7 +96,7 @@ function clearGrid() {
     });
 }
 
-function placeObject(cell, obj) {
+function placeObject(cell, obj, isMerge) {
     cell.innerHTML = "";
     const img = document.createElement("img");
     img.src = `icons/${obj.id}.png`;
@@ -106,6 +106,9 @@ function placeObject(cell, obj) {
     cell.appendChild(img);
     cell.setAttribute("completed", "");
     cell.matchObject = obj;
+    if (isMerge) {
+       img.setAttribute("selected", "")
+    }
 }
 
 /* ===============================
@@ -144,7 +147,7 @@ function mergeCells(fromCell, toCell) {
     fromCell.removeAttribute("completed");
     fromCell.matchObject = null;
 
-    placeObject(toCell, new MatchObject(id, `${newLevel}`));
+    placeObject(toCell, new MatchObject(id, `${newLevel}`, true));
 }
 
 /* ===============================

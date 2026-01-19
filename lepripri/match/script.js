@@ -157,10 +157,13 @@ gridCells.forEach(cell => {
     if (cell.matchObject) {
       mergeCells(draggedCell, cell);
     } else {
-      cell.appendChild(draggedCell.firstChild);
-      cell.matchObject = draggedCell.matchObject;
-      draggedCell.innerHTML = "";
-      draggedCell.matchObject = null;
+cell.appendChild(draggedCell.firstChild);
+cell.matchObject = draggedCell.matchObject;
+cell.setAttribute("completed", ""); // ← LIGNE MANQUANTE
+
+draggedCell.matchObject = null;
+draggedCell.innerHTML = "";
+draggedCell.removeAttribute("completed");
     }
   });
 });
@@ -251,8 +254,8 @@ setInterval(() => {
 ================================ */
 clearGrid();
 placeObject(gridCells[17], new MatchObject("CPP1", 1));
-placeObject(gridCells[23], new MatchObject("CPP1", 1));
-placeObject(gridCells[24], new MatchObject("CPP1", 1));
+placeObject(gridCells[23], new MatchObject("RDP1", 1));
+placeObject(gridCells[24], new MatchObject("RDP1", 1));
 
 initCommands();
 document.querySelector(".energy").textContent = player.energy;

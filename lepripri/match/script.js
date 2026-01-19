@@ -246,6 +246,18 @@ setInterval(() => {
             curElement.setAttribute("selected", "");
         };
     });
+if (grid.querySelector('img[selected]')) {
+    var selection = grid.querySelector('img[selected]').dataset,
+    texteOfBubule = '<strong>' + OBJECT_NAMES[selection.id] + '</strong>' + ' niv. ' + selection.level;
+    if (texteOfBubule.includes('⚡')) {
+        texteOfBubule = '<strong>' + OBJECT_NAMES[selection.id] + '</strong> niv. ' + selection.level + ". PRDUCTEUR consommant de l'ÉNERGIE.";
+    }
+    document.querySelector('.textBuBule text').innerHTML = texteOfBubule;
+    document.querySelector('.textBuBule').removeAttribute('no-selection');
+}else{
+    document.querySelector('.textBuBule text').innerHTML = 'aucun objet selectionné';
+    document.querySelector('.textBuBule').setAttribute('no-selection', '');
+}
 }, 10);
 /* ===============================
    FIN SCRIPT

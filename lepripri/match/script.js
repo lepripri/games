@@ -138,7 +138,7 @@ function mergeCells(fromCell, toCell) {
     if (!canMerge(a, b)) return;
 
     const newLevel = Number(a.dataset.level) + 1;
-    const id = a.dataset.id;
+    const id = a.dataset.id.substring(0, 3) + newLevel;
 
     fromCell.innerHTML = "";
     fromCell.removeAttribute("completed");

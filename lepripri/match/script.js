@@ -96,17 +96,20 @@ function clearGrid() {
     });
 }
 
-function placeObject(cell, obj, locked, boxed) {
+function placeObject(cell, obj, isMerge, locked, boxed) {
     cell.innerHTML = "";
     const img = document.createElement("img");
     img.src = `icons/${obj.id}.png`;
     img.draggable = true;
     img.dataset.id = obj.id;
     img.dataset.level = obj.level;
-    grid.querySelectorAll("img").forEach((secCurElement) => {
-        secCurElement.removeAttribute("selected");
-    });
-    img.setAttribute("selected", "");
+
+    if (isMerge) {
+       grid.querySelectorAll("img").forEach((secCurElement) => {
+           secCurElement.removeAttribute("selected");
+       });
+       img.setAttribute("selected", "");
+    }
     cell.appendChild(img);
     cell.setAttribute("completed", "");
     if (boxed != undefined || boxed != null) { // si boxed vaut 0, il seras mis quand même (pas de problèmes)
@@ -124,7 +127,7 @@ function placeObject(cell, obj, locked, boxed) {
 clearGrid();
 
 // objets de départ (exemple jouable)
-placeObject(gridCells[17], new MatchObject("CPP1", 1), true);
+placeObject(gridCells[17], new MatchObject("CPP1", 1), false, true);
 placeObject(gridCells[23], new MatchObject("RDP1", 1));
 placeObject(gridCells[24], new MatchObject("RDP1", 1));
 
@@ -154,7 +157,7 @@ function mergeCells(fromCell, toCell) {
     fromCell.removeAttribute("completed");
     fromCell.matchObject = null;
 
-    placeObject(toCell, new MatchObject(id, `${newLevel}`));
+    placeObject(toCell, new MatchObject(id, `${newLevel}`, true));
 }
 
 /* ===============================
@@ -165,7 +168,7 @@ let draggedCell = null;
 gridCells.forEach(cell => {
     cell.addEventListener("dragstart", e => {
         if (!cell.matchObject) return;
-        if (e.target.getAttribute(locked)) return;
+        if (e.target.getAttribute("locked")) return;
         draggedCell = cell;
         e.target.style.opacity = 0.3;
     });

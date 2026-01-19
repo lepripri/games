@@ -206,10 +206,11 @@ gridCells.forEach(cell => {
                 player.energy + (values[cell.matchObject.level - 1] || 1)
             );
         }
-
-        cell.innerHTML = "";
-        cell.matchObject = null;
-        cell.removeAttribute("completed");
+        if (id.startsWith("PCS") || id.startsWith("ENR")) {
+            cell.innerHTML = "";
+            cell.matchObject = null;
+            cell.removeAttribute("completed");
+        }
     });
 });
 

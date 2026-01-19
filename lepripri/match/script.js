@@ -27,15 +27,49 @@ function openEnergyAssistant() {
     };
 }
 
-function moreInfo(objectNiv, colection, colectionIndex) {
-   var infoPanel = document.createElement('dialog');
-   infoPanel.innerHTML = `<div class="windowTitle">info sur cet objet</div><div class="content"><h1>niveau 1 (niveau MAX)</h1><br><div></div></div><div style="height: 85px;padding-inline: 19px;">obtenu par : <br><div></div></div>`;
+function getCollectionFor(id) {
+    const prefix = id.substring(0, 3);
+    const collection = [];
+
+    for (let i = 1; i <= 10; i++) {
+        const testId = prefix + i;
+        if (OBJECT_NAMES[testId]) {
+            collection.push(`icons/${testId}.png`);
+        }
+    }
+    return collection;
+}
+
+function moreInfo(objectNiv, collection, collectionIndex = 0) {
+   const infoPanel = document.createElement('dialog');
+
+   infoPanel.innerHTML = `
+     <div class="windowTitle">Informations sur l'objet</div>
+     <div class="content">
+        <h1></h1>
+        <div class="collection"></div>
+     </div>
+     <div style="height: 85px;padding-inline: 19px;">
+        obtenu par :
+        <div class="from"></div>
+     </div>
+   `;
+
    document.body.appendChild(infoPanel);
-   infoPanel.querySelector("h1").contentText = 'niveau ' + objectNiv;
-   var colectionDiv = infoPanel.querySelector(".content > div");
-   colection.forEach((currentIDOfColection) => {
-      colectionDiv.appendChild(document.createElement('img')).src = currentIDOfColection;
+
+   infoPanel.querySelector("h1").textContent =
+     `Niveau ${objectNiv}`;
+
+   const collectionDiv = infoPanel.querySelector(".collection");
+   collection.forEach(src => {
+      const img = document.createElement("img");
+      img.src = src;
+      collectionDiv.appendChild(img);
    });
+
+   infoPanel.showModal();
+   infoPanel.addEventListener("click", () => infoPanel.close());
+   infoPanel.onclose = () => infoPanel.remove();
 }
 
 function getEnergyBoost() {
@@ -156,6 +190,8 @@ function placeObject(cell, obj, isMerge, locked, boxed) {
            secCurElement.removeAttribute("selected");
        });
        img.setAttribute("selected", "");
+       const cell = img.parentElement;
+       currentSelectedObject = cell.matchObject;
     }
     cell.appendChild(img);
     cell.setAttribute("completed", "");
@@ -400,12 +436,15 @@ document.querySelector(".energy").textContent = player.energy;
 ================================ */
 setInterval(() => {
     grid.querySelectorAll("img").forEach((curElement) => {
-        curElement.onclick = () => {
-            grid.querySelectorAll("img").forEach((secCurElement) => {
-                secCurElement.removeAttribute("selected");
-            });
-            curElement.setAttribute("selected", "");
-        };
+       curElement.onclick = () => {
+           grid.querySelectorAll("img").forEach(img => {
+               img.removeAttribute("selected");
+           });
+           curElement.setAttribute("selected", "");
+
+           const cell = curElement.parentElement;
+           currentSelectedObject = cell.matchObject;
+       };
     });
     if (grid.querySelector('img[selected]')) {
        var selection = grid.querySelector('img[selected]').dataset,
@@ -426,7 +465,21 @@ setInterval(() => {
 options.value = 'options';
 options.onchange = () => {
     switch (options.value) {
-        case "informations et propriétées": /* no action */ break;
+        case "informations et propriétées":
+            if (!currentSelectedObject) {
+                showMessage("Aucun objet sélectionné");
+                break;
+            }
+
+            const obj = currentSelectedObject;
+            const collection = getCollectionFor(obj.id);
+
+            moreInfo(
+                obj.level,
+                collection,
+                obj.level - 1
+            );
+            break;
     }
     options.value = 'options';
 }

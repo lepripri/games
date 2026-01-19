@@ -273,6 +273,16 @@ setInterval(() => {
        document.querySelector('.textBuBule').setAttribute('no-selection', '');
     }
 }, 10);
+/* ==============================
+   select d'options
+=============================== */
+options.value = 'options';
+options.onchange = () => {
+    switch (options.value) {
+        case "informations et propriétées": /* no action */ break;
+    }
+    options.value = 'options';
+}
 /* ===============================
    FIN SCRIPT
 ================================ */

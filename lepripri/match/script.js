@@ -144,7 +144,7 @@ function mergeCells(fromCell, toCell) {
     fromCell.removeAttribute("completed");
     fromCell.matchObject = null;
 
-    placeObject(toCell, new MatchObject(id, newLevel));
+    placeObject(toCell, new MatchObject(id, `${newLevel}`));
 }
 
 /* ===============================

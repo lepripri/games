@@ -25,6 +25,16 @@ function openEnergyAssistant() {
     };
 }
 
+function getEnergyBoost() {
+    const select = document.getElementById("powerEnergy");
+    if (!select) return 1;
+
+    const val = select.value;
+    if (val === "2x") return 2;
+    if (val === "3x") return 3;
+    return 1;
+}
+
 /* ===============================
    DONNÉES JOUEUR
 ================================ */
@@ -282,8 +292,16 @@ gridCells.forEach(cell => {
         }
 
         // énergie consommée
-        player.energy--;
-        document.querySelector(".energy").textContent = player.energy;
+const boost = getEnergyBoost();
+
+    // vérification énergie
+    if (player.energy < boost) {
+        showMessage("⚠️ Pas assez d'énergie pour ce boost", openEnergyAssistant);
+        return;
+    }
+
+    player.energy -= boost;
+    document.querySelector(".energy").textContent = player.energy;
 
         obj.productionCount++;
 
@@ -295,6 +313,7 @@ gridCells.forEach(cell => {
         // PRODUCTEUR PRINCIPAL
         if (id.startsWith("RDP")) {
             producedId = "CPP1";
+            producedLevel = Math.min(7, 1 + (boost - 1));
 
             if (obj.productionCount >= 50) {
                 obj.cooldownUntil = Date.now() + 300000; // 5 min
@@ -305,7 +324,7 @@ gridCells.forEach(cell => {
         // MAMAN PRIPRI
         if (id === "CPP8") {
             producedId = "BBP1";
-            producedLevel = Math.random() < 0.5 ? 1 : 2;
+            producedLevel = Math.min(2, (Math.random() < 0.5 ? 1 : 2) + (boost - 1));
 
             if (obj.productionCount >= 25) {
                 cell.innerHTML = "";
@@ -323,7 +342,7 @@ gridCells.forEach(cell => {
                 producedLevel = Math.random() < 0.5 ? 1 : 2;
             } else {
                 producedId = "BEP1";
-                producedLevel = Math.floor(Math.random() * 5) + 1;
+                producedLevel = Math.min(5, (Math.floor(Math.random() * 5) + 1) + (boost - 1));
             }
 
             if (obj.productionCount >= 25) {

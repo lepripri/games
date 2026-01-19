@@ -27,6 +27,17 @@ function openEnergyAssistant() {
     };
 }
 
+function moreInfo(objectNiv, colection, colectionIndex) {
+   var infoPanel = document.createElement('dialog');
+   infoPanel.innerHTML = `<div class="windowTitle">info sur cet objet</div><div class="content"><h1>niveau 1 (niveau MAX)</h1><br><div></div></div><div style="height: 85px;padding-inline: 19px;">obtenu par : <br><div></div></div>`;
+   document.body.appendChild(infoPanel);
+   infoPanel.querySelector("h1").contentText = 'niveau ' + objectNiv;
+   var colectionDiv = infoPanel.querySelector(".content > div");
+   colection.forEach((currentIDOfColection) => {
+      colectionDiv.appendChild(document.createElement('img')).src = currentIDOfColection;
+   });
+}
+
 function getEnergyBoost() {
     const select = document.getElementById("powerEnergy");
     if (!select) return 1;

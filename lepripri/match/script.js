@@ -96,19 +96,26 @@ function clearGrid() {
     });
 }
 
-function placeObject(cell, obj, isMerge) {
+function placeObject(cell, obj, locked, boxed) {
     cell.innerHTML = "";
     const img = document.createElement("img");
     img.src = `icons/${obj.id}.png`;
     img.draggable = true;
     img.dataset.id = obj.id;
     img.dataset.level = obj.level;
+    grid.querySelectorAll("img").forEach((secCurElement) => {
+        secCurElement.removeAttribute("selected");
+    });
+    img.setAttribute("selected", "");
     cell.appendChild(img);
     cell.setAttribute("completed", "");
-    cell.matchObject = obj;
-    if (isMerge) {
-       img.setAttribute("selected", "")
+    if (boxed != undefined || boxed != null) { // si boxed vaut 0, il seras mis quand même (pas de problèmes)
+       cell.setAttribute("boxed", boxed)
     }
+    if (locked) {
+       cell.setAttribute("locked", "")
+    } 
+    cell.matchObject = obj;
 }
 
 /* ===============================
@@ -117,7 +124,7 @@ function placeObject(cell, obj, isMerge) {
 clearGrid();
 
 // objets de départ (exemple jouable)
-placeObject(gridCells[17], new MatchObject("CPP1", 1));
+placeObject(gridCells[17], new MatchObject("CPP1", 1), true);
 placeObject(gridCells[23], new MatchObject("RDP1", 1));
 placeObject(gridCells[24], new MatchObject("RDP1", 1));
 
@@ -147,7 +154,7 @@ function mergeCells(fromCell, toCell) {
     fromCell.removeAttribute("completed");
     fromCell.matchObject = null;
 
-    placeObject(toCell, new MatchObject(id, `${newLevel}`, true));
+    placeObject(toCell, new MatchObject(id, `${newLevel}`));
 }
 
 /* ===============================
@@ -158,6 +165,7 @@ let draggedCell = null;
 gridCells.forEach(cell => {
     cell.addEventListener("dragstart", e => {
         if (!cell.matchObject) return;
+        if (e.target.getAttribute(locked)) return;
         draggedCell = cell;
         e.target.style.opacity = 0.3;
     });
@@ -249,18 +257,18 @@ setInterval(() => {
             curElement.setAttribute("selected", "");
         };
     });
-if (grid.querySelector('img[selected]')) {
-    var selection = grid.querySelector('img[selected]').dataset,
-    texteOfBubule = '<strong>' + OBJECT_NAMES[selection.id] + '</strong>' + ' niv. ' + selection.level;
-    if (texteOfBubule.includes('⚡')) {
-        texteOfBubule = '<strong>' + OBJECT_NAMES[selection.id] + '</strong> niv. ' + selection.level + ". PRDUCTEUR consommant de l'ÉNERGIE.";
+    if (grid.querySelector('img[selected]')) {
+       var selection = grid.querySelector('img[selected]').dataset,
+       texteOfBubule = '<strong>' + OBJECT_NAMES[selection.id] + '</strong>' + ' niv. ' + selection.level;
+       if (texteOfBubule.includes('⚡')) {
+           texteOfBubule = '<strong>' + OBJECT_NAMES[selection.id] + '</strong> niv. ' + selection.level + ". PRDUCTEUR consommant de l'ÉNERGIE.";
+       }
+       document.querySelector('.textBuBule text').innerHTML = texteOfBubule;
+       document.querySelector('.textBuBule').removeAttribute('no-selection');
+    }else{
+       document.querySelector('.textBuBule text').innerHTML = 'aucun objet selectionné';
+       document.querySelector('.textBuBule').setAttribute('no-selection', '');
     }
-    document.querySelector('.textBuBule text').innerHTML = texteOfBubule;
-    document.querySelector('.textBuBule').removeAttribute('no-selection');
-}else{
-    document.querySelector('.textBuBule text').innerHTML = 'aucun objet selectionné';
-    document.querySelector('.textBuBule').setAttribute('no-selection', '');
-}
 }, 10);
 /* ===============================
    FIN SCRIPT

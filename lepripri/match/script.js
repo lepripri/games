@@ -148,8 +148,9 @@ function placeObject(cell, obj, isMerge, locked, boxed) {
     }
     cell.appendChild(img);
     cell.setAttribute("completed", "");
-    if (boxed != undefined || boxed != null) { // si boxed vaut 0, il seras mis quand même (pas de problèmes)
+    if (boxed != undefined && boxed != null) { // si boxed vaut 0, il seras mis quand même (pas de problèmes)
        cell.setAttribute("boxed", boxed)
+       
     }
     if (locked) {
        cell.setAttribute("locked", "")
@@ -204,7 +205,7 @@ let draggedCell = null;
 gridCells.forEach(cell => {
     cell.addEventListener("dragstart", e => {
         if (!cell.matchObject) return;
-        if (e.target.getAttribute("locked")) return;
+        if (cell.hasAttribute("locked")) return;
         draggedCell = cell;
         e.target.style.opacity = 0.3;
     });

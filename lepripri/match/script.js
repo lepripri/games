@@ -68,23 +68,23 @@ const OBJECT_NAMES = {
     RDP5: "⚡ boîte pleine",
     RDP6: "⚡ ville de priprix",
 
-    PCS1: "🪙 1 pièce",
-    PCS2: "🪙 3 pièces",
-    PCS3: "🪙 7 pièces",
-    PCS4: "🪙 15 pièces",
-    PCS5: "🪙 32 pièces",
+    PCS1: "1 pièce",
+    PCS2: "3 pièces",
+    PCS3: "7 pièces",
+    PCS4: "15 pièces",
+    PCS5: "32 pièces",
 
-    ENR1: "⚡ 2 énergies",
-    ENR2: "⚡ 5 énergies",
-    ENR3: "⚡ 15 énergies",
-    ENR4: "⚡ 40 énergies",
-    ENR5: "⚡ 100 énergies",
+    ENR1: "2 énergies",
+    ENR2: "5 énergies",
+    ENR3: "15 énergies",
+    ENR4: "40 énergies",
+    ENR5: "100 énergies",
 
-    DFU1: "💎 1 fonctionnalité payantes",
-    DFU2: "💎 3 fonctionnalités payantes",
-    DFU3: "💎 7 fonctionnalités payantes",
-    DFU4: "💎 15 fonctionnalités payantes",
-    DFU5: "💎 32 fonctionnalités payantes",
+    DFU1: "1 fonctionnalité payantes",
+    DFU2: "3 fonctionnalités payantes",
+    DFU3: "7 fonctionnalités payantes",
+    DFU4: "15 fonctionnalités payantes",
+    DFU5: "32 fonctionnalités payantes",
 
     CFR1: "sachet bleu",
     CFR2: "sachet violet",
@@ -103,6 +103,253 @@ const OBJECT_NAMES = {
     BEP4: "pripri extraterrestre adulte",
     BEP5: "vieux pripri extraterrestre",
 };
+
+/* ===============================
+   PERSONNAGES & RÈGLES
+================================ */
+
+const CHARACTERS = [
+  { id: "camille", img: "camille.png", reward: { money: 30, energy: 10 } },
+  { id: "farceur", img: "pripri farceur.png", reward: { money: 20, energy: 5 } },
+  { id: "gourmand", img: "pripri gourmand.png", levelBonus: 0.3, hard: true },
+  { id: "dixo", img: "dixo.png", levelBonus: 0.2, hard: true, rich: true },
+  { id: "maman", img: "maman pripri.png" },
+  { id: "papa", img: "papa pripri.png" },
+  { id: "boutdumonde", img: "pripri du bout du monde.png" },
+  { id: "plancequot", img: "plancequot.png", noReward: true },
+  { id: "intelligent", img: "pripri inteligent.png" },
+  { id: "milliminutes", img: "agent d'entretient milliminutes.png" },
+  { id: "djixy", img: "djixy.png" }
+];
+
+/* ===============================
+   COMMANDES
+================================ */
+
+let activeCommands = [];
+let normalCommands = [];
+let specialCommands = [];
+
+function generateCommandsForProducer(producerId) {
+  activeCommands = [];
+
+  const availableChars = CHARACTERS.filter(c => c.id !== "plancequot");
+  const count = Math.floor(Math.random() * 4) + 3; // 3 à 6
+
+  shuffleArray(availableChars);
+  function getNormalCommandLimit(playerLevel) {
+    if (playerLevel === 1) return 1;
+    if (playerLevel === 2) return 2;
+    return 6;
+  }
+  // Étape 1 → niveau 4 → CEN1
+  activeCommands.push(createCommand(
+    availableChars[0],
+    producerId,
+    4,
+    { type: "CEN1" }
+  ));
+
+  // Étape 2 → niveau 5 → DFU2
+  activeCommands.push(createCommand(
+    availableChars[1],
+    producerId,
+    5,
+    { type: "DFU2" }
+  ));
+
+  // Étape 3 → niveau 6 → TBC1
+  activeCommands.push(createCommand(
+    availableChars[2],
+    producerId,
+    6,
+    { type: "TBC1" }
+  ));
+
+  // Étape 4 → niveau 7 → TBC2
+  activeCommands.push(createCommand(
+    availableChars[3],
+    producerId,
+    7,
+    { type: "TBC2" }
+  ));
+
+  renderCommands();
+}
+
+function createCommand(character, producerId, level, reward) {
+  return {
+    character,
+    producerId,
+    requiredLevel: level,
+    reward,
+    completed: false
+  };
+}
+
+function renderCommands() {
+  const container = document.querySelector("#commands");
+  container.innerHTML = "";
+
+  activeCommands.forEach((cmd, index) => {
+    const div = document.createElement("div");
+    div.className = "await-command";
+    div.dataset.index = index;
+
+    div.innerHTML = `
+      <div class="command-picture">
+        <img src="${cmd.character.img}">
+      </div>
+      <div class="command">
+        <div class="reward">
+          ${renderReward(cmd.reward)}
+        </div>
+        <div class="cible">
+          ${cmd.producerId} niv. ${cmd.requiredLevel}
+        </div>
+      </div>
+    `;
+
+    container.appendChild(div);
+  });
+}
+
+function renderReward(reward) {
+  if (!reward) return `<div>🤲 aucune récompense</div>`;
+  if (reward.type) return `<div><img src="icons/${reward.type}.png"></div>`;
+
+  let html = "";
+  if (reward.money) html += `<div>+${reward.money}🪙</div>`;
+  if (reward.energy) html += `<div>⚡+${reward.energy}</div>`;
+  return html;
+}
+
+function tryCompleteCommand(obj) {
+  const cmd = activeCommands.find(c =>
+    !c.completed &&
+    obj.id.startsWith(c.producerId.substring(0,3)) &&
+    obj.level >= c.requiredLevel
+  );
+
+  if (!cmd) return false;
+
+  cmd.completed = true;
+
+  // récompense
+  if (cmd.reward?.money) player.money += cmd.reward.money;
+  if (cmd.reward?.energy) player.energy += cmd.reward.energy;
+
+  if (cmd.reward?.type) {
+    const empty = gridCells.find(c => !c.matchObject);
+    if (empty) placeObject(empty, new MatchObject(cmd.reward.type, 1));
+  }
+
+  renderCommands();
+  return true;
+}
+
+function addPlancequotCommand() {
+  activeCommands.push({
+    character: CHARACTERS.find(c => c.id === "plancequot"),
+    producerId: "ANY",
+    requiredLevel: 999,
+    reward: null,
+    completed: false
+  });
+}
+
+function generateNormalCommands() {
+  const limit = getNormalCommandLimit(Math.floor(player.level));
+  if (normalCommands.length >= limit) return;
+
+  const candidates = CHARACTERS.filter(c => true);
+  shuffleArray(candidates);
+
+  while (normalCommands.length < limit) {
+    const char = candidates.pop();
+    if (!char) break;
+
+    normalCommands.push({
+      character: char,
+      required: generateLevelTarget(),
+      reward: generateStandardReward(char),
+      completed: false
+    });
+  }
+}
+
+function generateSpecialProducerCommands(producerId) {
+  if (specialCommands.length >= 4) return;
+
+  const chars = CHARACTERS.filter(c => c.id !== "plancequot");
+  shuffleArray(chars);
+
+  const steps = [
+    { level: 4, reward: { type: "CEN1" } },
+    { level: 5, reward: { type: "DFU2" } },
+    { level: 6, reward: { type: "TBC1" } },
+    { level: 7, reward: { type: "TBC2" } }
+  ];
+
+  steps.forEach((step, i) => {
+    if (specialCommands.length >= 9) return;
+
+    specialCommands.push({
+      character: chars[i],
+      producerId,
+      requiredLevel: step.level,
+      reward: step.reward,
+      completed: false,
+      special: true
+    });
+  });
+}
+
+function renderAllCommands() {
+  const container = document.querySelector("#commands");
+  container.innerHTML = "";
+
+  [...normalCommands, ...specialCommands].forEach(cmd => {
+    const div = document.createElement("div");
+    div.className = "await-command";
+    if (cmd.special) div.setAttribute("special", "");
+
+    div.innerHTML = `
+      <div class="command-picture">
+        <img src="${cmd.character.img}">
+      </div>
+      <div class="command">
+        <div class="reward">${renderReward(cmd.reward)}</div>
+        <div class="cible">
+          ${cmd.producerId ? `${cmd.producerId} niv. ${cmd.requiredLevel}` : ""}
+        </div>
+      </div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function tryCompleteCommand(obj) {
+  const all = [...normalCommands, ...specialCommands];
+
+  const cmd = all.find(c =>
+    !c.completed &&
+    (!c.producerId || obj.id.startsWith(c.producerId.substring(0,3))) &&
+    obj.level >= c.requiredLevel
+  );
+
+  if (!cmd) return false;
+
+  cmd.completed = true;
+  applyReward(cmd.reward);
+
+  // retirer commande
+  normalCommands = normalCommands.filter(c => c !== cmd);
+  specialCommands = specialCommands.filter(c => c !== cmd);
+
+  renderAllCommands();
+  return true;
+}
 
 /* ===============================
    MATCH OBJECT
@@ -271,7 +518,6 @@ gridCells.forEach(cell => {
 gridCells.forEach(cell => {
     cell.addEventListener("click", () => {
         if (!cell.matchObject) return;
-
         const obj = cell.matchObject;
         const id = obj.id;
 

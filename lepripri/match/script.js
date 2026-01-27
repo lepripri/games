@@ -662,7 +662,9 @@ setInterval(() => {
 options.value = 'options';
 options.onchange = () => {
     switch (options.value) {
-        case "informations et propriétées": /* no action */ break;
+        case "informations et propriétées": 
+          var infoDialog = document.createElement('dialog');
+          break;
     }
     options.value = 'options';
 }

@@ -51,6 +51,7 @@ const player = {
    OBJETS (NOMS)
 ================================ */
 const OBJECT_NAMES = {
+    allIsArray: ["CPP1","CPP2","CPP3","CPP4","CPP5","CPP6","CPP7","CPP8","CPP9","RDP1","RDP2","RDP3","RDP4","RDP5","RDP6","PCS1","PCS2","PCS3","PCS4","PCS5","ENR1","ENR2","ENR3","ENR4","ENR5","DFU1","DFU2","DFU3","DFU4","DFU5","CFR1","CFR2","CFR3","CFR4","CFR5","CFR6","CFR7","BBP1","BBP2","BEP1","BEP2","BEP3", "BEP4", "BEP5"],
     CPP1: "pripri simple",
     CPP2: "pripri double",
     CPP3: "pripri triple",
@@ -663,7 +664,7 @@ var infoDialog = {remove: () => console.error("Uncaught Error: no window is open
 function showInfo(getObjectID, getObjectLevel) {
     infoDialog = document.createElement('dialog');
     var curentCollectionHTML = "",
-    curentCollectionArray = arr.filter(item => item.startsWith(getObjectID.substring(0, 3)));
+    curentCollectionArray = OBJECT_NAMES.allIsArray.filter(item => item.startsWith(getObjectID.substring(0, 3)));
     curentCollectionArray.forEach((curentCollectionItem) => {
        if (curentCollectionItem == getObjectID) {
           curentCollectionHTML += '<img src="' + getObjectID + '.png selected>'

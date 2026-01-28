@@ -657,13 +657,36 @@ setInterval(() => {
     }
 }, 10);
 /* ==============================
+   informations
+=============================== */
+var infoDialog = {remove: () => console.error("Uncaught Error: no window is open for info"), open: () => {}, onclose = null, innerHTML: "<dialog></dialog>", querySelector: () => {return {value: ""}}};
+function showInfo(getObjectID, getObjectLevel) {
+    infoDialog = document.createElement('dialog');
+    var curentCollectionHTML = "",
+    curentCollectionArray = arr.filter(item => item.startsWith(getObjectID.substring(0, 3)));
+    curentCollectionArray.forEach((curentCollectionItem) => {
+       if (curentCollectionItem == getObjectID) {
+          curentCollectionHTML += '<img src="' + getObjectID + '.png selected>'
+       }else{
+          curentCollectionHTML += '<img src="' + curentCollectionItem + '.png selected>'
+       }
+    });
+    infoDialog.innerHTML = `<dialog class="infoPannel"><div class="windowTitle">information sur ${OBJECT_NAMES[getObjectID]}</div><div class="content"><h1>"${OBJECT_NAMES[grid.querySelector('img[selected]').dataset.id]}" est au niveau ${OBJECT_NAMES[getObjectLevel]} :</h1><img src="${grid.querySelector('img[selected]').dataset.id}.png"></div><div class="objectColection">${curentCollectionHTML}</div><div class="buttons"><button onclick="infoDialog.close();">fermer</button><select id="getPosition"><option disabled="">trouver</option><option>producteur</option><option>cet objet</option></select><button disabled="">voir la boutique</button></div></dialog>`;
+    infoDialog.querySelector("#getPosition").value = "trouver";
+    document.body.appendChild(infoDialog);
+    infoDialog.show();
+    infoDialog.onclose = () => {
+       infoDialog.remove();
+    }
+}
+/* ==============================
    select d'options
 =============================== */
 options.value = 'options';
 options.onchange = () => {
     switch (options.value) {
         case "informations et propriétées": 
-          var infoDialog = document.createElement('dialog');
+            showInfo(grid.querySelector('img[selected]').dataset.id, grid.querySelector('img[selected]').dataset.level);
           break;
     }
     options.value = 'options';

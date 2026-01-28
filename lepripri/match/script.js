@@ -659,7 +659,7 @@ setInterval(() => {
 /* ==============================
    informations
 =============================== */
-var infoDialog = {remove: () => console.error("Uncaught Error: no window is open for info"), open: () => {}, onclose = null, innerHTML: "<dialog></dialog>", querySelector: () => {return {value: ""}}};
+var infoDialog = {remove: () => console.error("Uncaught Error: no window is open for info"), open: () => {}, onclose: null, innerHTML: "<dialog></dialog>", querySelector: () => {return {value: ""}}};
 function showInfo(getObjectID, getObjectLevel) {
     infoDialog = document.createElement('dialog');
     var curentCollectionHTML = "",

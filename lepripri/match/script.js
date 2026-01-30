@@ -672,7 +672,8 @@ function showInfo(getObjectID, getObjectLevel) {
           curentCollectionHTML += '<img src="icons/' + curentCollectionItem + '.png" selected>'
        }
     });
-    infoDialog.innerHTML = `<dialog class="infoPannel"><div class="windowTitle">information sur ${OBJECT_NAMES[getObjectID]}</div><div class="content"><h1>"${OBJECT_NAMES[grid.querySelector('img[selected]').dataset.id]}" est au niveau ${OBJECT_NAMES[getObjectLevel]} :</h1><img src="icons/${grid.querySelector('img[selected]').dataset.id}.png"></div><div class="objectColection">${curentCollectionHTML}</div><div class="buttons"><button onclick="infoDialog.close();">fermer</button><select id="getPosition"><option disabled="">trouver</option><option>producteur</option><option>cet objet</option></select><button disabled="">voir la boutique</button></div></dialog>`;
+    infoDialog.innerHTML = `<div class="windowTitle">information sur ${OBJECT_NAMES[getObjectID]}</div><div class="content"><h1>"${OBJECT_NAMES[grid.querySelector('img[selected]').dataset.id]}" est au niveau ${OBJECT_NAMES[getObjectLevel]} :</h1><img src="icons/${grid.querySelector('img[selected]').dataset.id}.png"></div><div class="objectColection">${curentCollectionHTML}</div><div class="buttons"><button onclick="infoDialog.close();">fermer</button><select id="getPosition"><option disabled="">trouver</option><option>producteur</option><option>cet objet</option></select><button disabled="">voir la boutique</button></div>`;
+    infoDialog.className = "infoPannel";
     infoDialog.querySelector("#getPosition").value = "trouver";
     document.body.appendChild(infoDialog);
     infoDialog.show();

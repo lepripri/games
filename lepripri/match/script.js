@@ -517,7 +517,7 @@ gridCells.forEach(cell => {
    PRODUCTION AVANCÉE
 ================================ */
 gridCells.forEach(cell => {
-    cell.addEventListener("click", () => {
+    cell.addEventListener("dblclick", () => {
         if (!cell.matchObject) return;
         const obj = cell.matchObject;
         const id = obj.id;
@@ -580,7 +580,7 @@ const boost = getEnergyBoost();
                 cell.innerHTML = "";
                 cell.matchObject = null;
                 cell.removeAttribute("completed");
-                showMessage("💥 La maman pripri s'est désintégrée");
+              //sound.explosion3();
                 return;
             }
         }
@@ -599,7 +599,7 @@ const boost = getEnergyBoost();
                 cell.innerHTML = "";
                 cell.matchObject = null;
                 cell.removeAttribute("completed");
-                showMessage("👽 Le pripri extraterrestre s'est dissous");
+              //sound.explosion3();
                 return;
             }
         }

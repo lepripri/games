@@ -693,6 +693,24 @@ options.onchange = () => {
     }
     options.value = 'options';
 }
+/* ==============================
+   inventaire
+=============================== */
+document.querySelector("button[aria-label=\"inventaire\"]").onclick = () => {
+    var elementInventory = document.querySelector(".inventory");
+    elementInventory.style.translate = "10px 430px";
+    elementInventory.hidden = false;
+    for (let i = 0; i < 101; i++) {
+        setTimeout(() => elementInventory.style.translate = `10px ${430 - i}px`, i * 2)
+    }
+    var coverDIV = document.createElement("div");
+    coverDIV.setAttribute("style", "position: fixed;width: 100%;height: 100%;width: -webkit-fill-available;height: -webkit-fill-available;");
+    coverDIV.onclick = () => {
+        elementInventory.hidden = true;
+        coverDIV.remove();
+    }
+    elementInventory.parentElement.insertBefore(coverDIV, elementInventory);
+}
 /* ===============================
    FIN SCRIPT
 ================================ */
